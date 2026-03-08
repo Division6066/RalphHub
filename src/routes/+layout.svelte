@@ -13,6 +13,7 @@
 		{ href: '/memory', label: 'Memory' },
 		{ href: '/kaizen', label: 'Kaizen' },
 		{ href: '/browser-agent', label: 'Browser Agent' },
+		{ href: '/launch', label: 'Launch' },
 		{ href: '/settings', label: 'Settings' }
 	];
 
