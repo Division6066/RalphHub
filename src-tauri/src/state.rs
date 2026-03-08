@@ -55,6 +55,8 @@ impl AppState {
         let managed_project_count = query_count(&connection, CountTable::ManagedProjects)?;
         let workflow_run_count = query_count(&connection, CountTable::WorkflowRuns)?;
         let overnight_loop_count = query_count(&connection, CountTable::OvernightLoops)?;
+        let memory_entry_count = query_count(&connection, CountTable::MemoryEntries)?;
+        let kaizen_task_count = query_count(&connection, CountTable::KaizenTasks)?;
 
         Ok(DashboardSnapshot {
             bun: detect_bun_status(),
@@ -63,6 +65,8 @@ impl AppState {
             managed_project_count,
             workflow_run_count,
             overnight_loop_count,
+            memory_entry_count,
+            kaizen_task_count,
         })
     }
 }
@@ -164,6 +168,45 @@ fn initialize_database(path: &Path) -> Result<()> {
             git_ref TEXT,
             created_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS memory_entries (
+            id TEXT PRIMARY KEY,
+            tool_id TEXT NOT NULL,
+            entry_type TEXT NOT NULL,
+            content TEXT NOT NULL,
+            tags TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS kaizen_tasks (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            priority TEXT NOT NULL DEFAULT 'medium',
+            tool_id TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS browser_sessions (
+            id TEXT PRIMARY KEY,
+            url TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'disconnected',
+            backend TEXT NOT NULL DEFAULT 'playwright',
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS voice_config (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            enabled INTEGER NOT NULL DEFAULT 0,
+            stt_provider TEXT NOT NULL DEFAULT 'faster-whisper',
+            tts_provider TEXT NOT NULL DEFAULT 'piper',
+            stt_model TEXT NOT NULL DEFAULT 'base',
+            tts_voice TEXT NOT NULL DEFAULT 'en_US-lessac-medium',
+            offline_fallback INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL
+        );
         ",
     )?;
 
@@ -188,6 +231,8 @@ enum CountTable {
     ManagedProjects,
     WorkflowRuns,
     OvernightLoops,
+    MemoryEntries,
+    KaizenTasks,
 }
 
 fn query_count(connection: &Connection, table: CountTable) -> Result<i64> {
@@ -195,6 +240,8 @@ fn query_count(connection: &Connection, table: CountTable) -> Result<i64> {
         CountTable::ManagedProjects => "SELECT COUNT(*) FROM managed_projects",
         CountTable::WorkflowRuns => "SELECT COUNT(*) FROM workflow_runs",
         CountTable::OvernightLoops => "SELECT COUNT(*) FROM overnight_loops",
+        CountTable::MemoryEntries => "SELECT COUNT(*) FROM memory_entries",
+        CountTable::KaizenTasks => "SELECT COUNT(*) FROM kaizen_tasks",
     };
     let count = connection.query_row(sql, [], |row| row.get(0))?;
     Ok(count)

@@ -5,11 +5,31 @@ export const KEY_FIELDS = [
 	'OPENAI_API_KEY',
 	'GROK_API_KEY',
 	'GEMINI_API_KEY',
-	'PERPLEXICA_KEYS'
+	'GLM_API_KEY',
+	'PERPLEXICA_KEYS',
+	'OLLAMA_API_KEY',
+	'OLLAMA_CLOUD_API_KEY',
+	'NOTION_API_KEY',
+	'GITHUB_TOKEN',
+	'HF_TOKEN'
 ] as const;
 
 export type KeyField = (typeof KEY_FIELDS)[number];
 export type KeyMap = Record<KeyField, string>;
+
+export const KEY_LABELS: Record<KeyField, { label: string; provider: string; url: string }> = {
+	ANTHROPIC_API_KEY: { label: 'Anthropic API Key', provider: 'Anthropic', url: 'https://console.anthropic.com/settings/keys' },
+	OPENAI_API_KEY: { label: 'OpenAI API Key', provider: 'OpenAI', url: 'https://platform.openai.com/api-keys' },
+	GROK_API_KEY: { label: 'Grok API Key', provider: 'xAI Grok', url: 'https://console.x.ai' },
+	GEMINI_API_KEY: { label: 'Gemini API Key', provider: 'Google Gemini', url: 'https://aistudio.google.com/app/apikey' },
+	GLM_API_KEY: { label: 'GLM API Key', provider: 'Zhipu AI GLM', url: 'https://open.bigmodel.cn/usercenter/apikeys' },
+	PERPLEXICA_KEYS: { label: 'Perplexica Keys', provider: 'Perplexica', url: 'https://github.com/ItzCrazyKns/Perplexica' },
+	OLLAMA_API_KEY: { label: 'Ollama Local Endpoint', provider: 'Ollama Local', url: 'http://localhost:11434' },
+	OLLAMA_CLOUD_API_KEY: { label: 'Ollama Cloud API Key', provider: 'Ollama Cloud', url: 'https://ollama.ai/cloud' },
+	NOTION_API_KEY: { label: 'Notion Integration Token', provider: 'Notion', url: 'https://www.notion.so/profile/integrations' },
+	GITHUB_TOKEN: { label: 'GitHub Personal Token', provider: 'GitHub', url: 'https://github.com/settings/tokens' },
+	HF_TOKEN: { label: 'Hugging Face Token', provider: 'Hugging Face', url: 'https://huggingface.co/settings/tokens' }
+};
 
 type SecureStoreConfig = {
 	vaultPath: string;
@@ -21,13 +41,7 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 export function createEmptyKeyMap(): KeyMap {
-	return {
-		ANTHROPIC_API_KEY: '',
-		OPENAI_API_KEY: '',
-		GROK_API_KEY: '',
-		GEMINI_API_KEY: '',
-		PERPLEXICA_KEYS: ''
-	};
+	return Object.fromEntries(KEY_FIELDS.map((k) => [k, ''])) as KeyMap;
 }
 
 export async function loadKeys(): Promise<KeyMap> {
