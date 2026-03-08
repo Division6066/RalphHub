@@ -1,5 +1,6 @@
 mod commands;
 mod models;
+mod orchestrator;
 mod state;
 mod tool_registry;
 
@@ -32,6 +33,10 @@ pub fn run() {
       commands::get_secure_store_config,
       commands::list_builtin_tools,
       commands::open_in_code,
+      orchestrator::deploy_to_colab,
+      orchestrator::deploy_to_pc,
+      orchestrator::inject_keys,
+      orchestrator::list_managed_projects,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

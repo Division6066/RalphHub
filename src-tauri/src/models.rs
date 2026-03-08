@@ -59,3 +59,48 @@ pub struct SecureStoreConfig {
     pub client_name: String,
     pub vault_password: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeployRequest {
+    pub url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EnvEntry {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EnvInjectionRequest {
+    pub workspace_path: String,
+    pub entries: Vec<EnvEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeployResult {
+    pub workspace_path: String,
+    pub normalized_url: String,
+    pub branch: String,
+    pub message: String,
+    pub state_path: String,
+    pub env_path: String,
+    pub notebook_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManagedProject {
+    pub id: String,
+    pub slug: String,
+    pub source_url: String,
+    pub workspace_path: String,
+    pub branch: String,
+    pub status: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
