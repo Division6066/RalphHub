@@ -198,3 +198,53 @@ fn start_playwright_mcp_server() -> Result<(), String> {
 fn dirs_home() -> Option<String> {
     std::env::var("HOME").ok()
 }
+
+#[tauri::command]
+pub fn get_mcp_connection_instructions() -> serde_json::Value {
+    serde_json::json!({
+        "playwright_mcp": {
+            "install": "bun add -g @playwright/mcp",
+            "start": "npx @playwright/mcp --port 8931",
+            "connect": "http://localhost:8931",
+            "description": "Playwright MCP server for browser automation via MCP protocol"
+        },
+        "capture_mcp": {
+            "extension_url": "https://chromewebstore.google.com/detail/capture-mcp/...",
+            "description": "Capture MCP Browser extension — gives full click/type/scrape access",
+            "steps": [
+                "Install the Capture MCP Browser extension from Chrome Web Store",
+                "Open Edge and activate the extension",
+                "Click 'Connect Browser via MCP' in RalphHub Browser Agent tab",
+                "Extension will auto-connect to RalphHub on port 8931"
+            ]
+        },
+        "edge_profile": {
+            "windows": "%APPDATA%\\Microsoft\\Edge\\User Data",
+            "macos": "~/Library/Application Support/Microsoft Edge",
+            "linux": "~/.config/microsoft-edge"
+        }
+    })
+}
+
+#[tauri::command]
+pub fn check_mcp_server_status() -> serde_json::Value {
+    let running = check_local_server_reachable(&format!("http://localhost:{MCP_PORT}/health"))
+        || check_local_server_reachable(&format!("http://localhost:{MCP_PORT}/api/tags"))
+        || check_local_server_reachable(&format!("http://localhost:{MCP_PORT}"));
+
+    serde_json::json!({
+        "running": running,
+        "port": MCP_PORT,
+        "endpoint": format!("http://localhost:{MCP_PORT}"),
+        "playwright_installed": detect_playwright_mcp_installed(),
+        "playwright_fallback": detect_playwright_installed()
+    })
+}
+
+fn check_local_server_reachable(url: &str) -> bool {
+    Command::new("curl")
+        .args(["-sf", "--max-time", "2", url])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}

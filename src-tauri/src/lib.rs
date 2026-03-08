@@ -82,6 +82,8 @@ pub fn run() {
       browser_agent::disconnect_browser_mcp,
       browser_agent::ensure_playwright,
       browser_agent::launch_browser_with_profile,
+      browser_agent::get_mcp_connection_instructions,
+      browser_agent::check_mcp_server_status,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

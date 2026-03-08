@@ -10,7 +10,16 @@
 		createdAt: string;
 	};
 
+	type McpStatus = {
+		running: boolean;
+		port: number;
+		endpoint: string;
+		playwrightInstalled: boolean;
+		playwrightFallback: boolean;
+	};
+
 	let sessions: BrowserSession[] = [];
+	let mcpStatus: McpStatus | null = null;
 	let loading = true;
 	let busy = false;
 	let message = '';
@@ -22,6 +31,9 @@
 			return;
 		}
 		await refresh();
+		try {
+			mcpStatus = await invokeTauri<McpStatus>('check_mcp_server_status');
+		} catch {}
 	});
 
 	async function refresh() {
@@ -205,6 +217,29 @@
 			{/if}
 		</div>
 	</div>
+
+	<!-- MCP server status -->
+	{#if mcpStatus !== null}
+		<div class="rounded-3xl border {mcpStatus.running ? 'border-green-400/20 bg-green-500/8' : 'border-white/10 bg-slate-950/45'} p-6 backdrop-blur">
+			<div class="flex items-center gap-3">
+				<div class="h-3 w-3 rounded-full {mcpStatus.running ? 'bg-green-400' : 'bg-slate-600'}"></div>
+				<div class="flex-1">
+					<p class="text-sm font-medium text-white">
+						MCP server {mcpStatus.running ? 'running' : 'not running'} on port {mcpStatus.port}
+					</p>
+					<p class="mt-1 text-xs text-slate-500">{mcpStatus.endpoint}</p>
+				</div>
+				<div class="flex gap-2 text-xs">
+					{#if mcpStatus.playwrightInstalled}
+						<span class="rounded-full bg-green-400/15 px-2 py-0.5 text-green-300">playwright-mcp ✓</span>
+					{/if}
+					{#if mcpStatus.playwrightFallback}
+						<span class="rounded-full bg-cyan-400/15 px-2 py-0.5 text-cyan-300">playwright ✓</span>
+					{/if}
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<!-- MCP protocol info -->
 	<div class="rounded-3xl border border-violet-400/20 bg-violet-500/8 p-6 backdrop-blur">
