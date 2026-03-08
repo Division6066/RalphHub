@@ -1,4 +1,5 @@
 mod commands;
+mod example_workflow;
 mod memory;
 mod mobile_api;
 mod models;

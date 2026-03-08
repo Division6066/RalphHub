@@ -6,6 +6,7 @@
 	const coreNav = [
 		{ href: '/', label: 'Dashboard', icon: '⬡', group: 'amitos' },
 		{ href: '/memory', label: 'Memory', icon: '🧠', group: 'amitos' },
+		{ href: '/projects', label: 'Projects', icon: '🗂️', group: 'amitos' },
 		{ href: '/tasks', label: 'Tasks', icon: '✅', group: 'amitos' },
 		{ href: '/kanban', label: 'Kanban', icon: '📋', group: 'amitos' },
 		{ href: '/inbox', label: 'Inbox', icon: '📥', group: 'amitos' },
