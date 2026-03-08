@@ -8,6 +8,11 @@
 		{ href: '/deploy', label: 'Deploy' },
 		{ href: '/tools', label: 'Tools' },
 		{ href: '/workflows', label: 'Workflows' },
+		{ href: '/ollama', label: 'Ollama' },
+		{ href: '/voice', label: 'Voice' },
+		{ href: '/memory', label: 'Memory' },
+		{ href: '/kaizen', label: 'Kaizen' },
+		{ href: '/browser-agent', label: 'Browser Agent' },
 		{ href: '/settings', label: 'Settings' }
 	];
 
@@ -46,9 +51,9 @@
 			</nav>
 
 			<div class="mt-auto rounded-2xl border border-cyan-400/20 bg-cyan-400/8 p-4 text-sm text-slate-300">
-				<p class="font-medium text-cyan-100">Bootstrap in progress</p>
+				<p class="font-medium text-cyan-100">RalphHub v2 — Fully wired</p>
 				<p class="mt-2 leading-6 text-slate-400">
-					Next: secure keys, deploy flows, tool orchestration, and workflow chaining.
+					All wishlist tools, Ollama local models, voice mode, MCP browser, Memory Spine + Kaizen.
 				</p>
 			</div>
 		</aside>

@@ -164,6 +164,45 @@ fn initialize_database(path: &Path) -> Result<()> {
             git_ref TEXT,
             created_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS memory_entries (
+            id TEXT PRIMARY KEY,
+            tool_id TEXT NOT NULL,
+            entry_type TEXT NOT NULL,
+            content TEXT NOT NULL,
+            tags TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS kaizen_tasks (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            priority TEXT NOT NULL DEFAULT 'medium',
+            tool_id TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS browser_sessions (
+            id TEXT PRIMARY KEY,
+            url TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'disconnected',
+            backend TEXT NOT NULL DEFAULT 'playwright',
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS voice_config (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            enabled INTEGER NOT NULL DEFAULT 0,
+            stt_provider TEXT NOT NULL DEFAULT 'faster-whisper',
+            tts_provider TEXT NOT NULL DEFAULT 'piper',
+            stt_model TEXT NOT NULL DEFAULT 'base',
+            tts_voice TEXT NOT NULL DEFAULT 'en_US-lessac-medium',
+            offline_fallback INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL
+        );
         ",
     )?;
 

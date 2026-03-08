@@ -8,7 +8,7 @@ use std::{
 use tauri::State;
 
 use crate::{
-    models::{CommandResponse, DashboardSnapshot, SecureStoreConfig, ToolManifest},
+    models::{CommandResponse, DashboardSnapshot, SecureStoreConfig, ToolConnectResult, ToolManifest},
     state::{bun_installer_hint, detect_bun_status, AppState},
     tool_registry::all_tools,
 };
@@ -236,4 +236,159 @@ fn editor_candidates() -> Vec<String> {
     }
 
     candidates
+}
+
+// ── Multi-integration "Connect & Test" ───────────────────────────────────────
+
+#[tauri::command]
+pub fn connect_and_test_tool(tool_id: String) -> ToolConnectResult {
+    let mut notes = Vec::new();
+
+    let ollama_ok = check_binary("ollama") && check_local_server("http://localhost:11434/api/tags");
+    if ollama_ok {
+        notes.push("Ollama running locally.".to_string());
+    } else {
+        notes.push("Ollama not running (run Ollama tab to start).".to_string());
+    }
+
+    let whisper_ok = check_python_import("faster_whisper") || check_binary("whisper");
+    let piper_ok = check_binary("piper");
+    let voice_ok = whisper_ok || piper_ok;
+    if voice_ok {
+        notes.push(format!(
+            "Voice: STT={} TTS={}",
+            if whisper_ok { "faster-whisper" } else { "none" },
+            if piper_ok { "piper" } else { "none" }
+        ));
+    } else {
+        notes.push("Voice not configured (open Voice tab to install).".to_string());
+    }
+
+    let mcp_ok = check_local_server(&format!("http://localhost:8931"));
+    if mcp_ok {
+        notes.push("Playwright MCP server reachable.".to_string());
+    } else {
+        notes.push("MCP server not running (connect from Browser Agent tab).".to_string());
+    }
+
+    let cursor_ok = editor_candidates().iter().any(|c| {
+        Path::new(c).exists() || Command::new(c).arg("--version").output().map(|o| o.status.success()).unwrap_or(false)
+    });
+    if cursor_ok {
+        notes.push("Cursor/VS Code detected.".to_string());
+    } else {
+        notes.push("No editor detected. Install Cursor or VS Code.".to_string());
+    }
+
+    ToolConnectResult {
+        tool_id,
+        ollama_ok,
+        voice_ok,
+        mcp_ok,
+        cursor_ok,
+        notes,
+    }
+}
+
+#[tauri::command]
+pub fn launch_in_cursor_desktop(workspace_path: String) -> Result<CommandResponse, String> {
+    let workspace = PathBuf::from(&workspace_path);
+    if !workspace.exists() {
+        return Err(format!("Workspace not found: {workspace_path}"));
+    }
+
+    let candidates = editor_candidates();
+    for candidate in &candidates {
+        if candidate.to_lowercase().contains("cursor") {
+            let status = Command::new(candidate)
+                .args([&workspace_path, "--reuse-window"])
+                .status();
+            if status.map(|s| s.success()).unwrap_or(false) {
+                return Ok(CommandResponse {
+                    ok: true,
+                    message: format!("Opened in Cursor Desktop: {workspace_path}"),
+                });
+            }
+        }
+    }
+
+    Err("Cursor Desktop not found. Install from https://cursor.sh".to_string())
+}
+
+#[tauri::command]
+pub fn launch_in_cursor_agent_web(workspace_path: String) -> Result<CommandResponse, String> {
+    let url = format!(
+        "https://cursor.sh/agents?workspace={}",
+        urlencoding_simple(&workspace_path)
+    );
+    open_url(&url)
+}
+
+#[tauri::command]
+pub fn launch_google_codex(prompt: Option<String>) -> Result<CommandResponse, String> {
+    let base_prompt = prompt.unwrap_or_else(|| "Start a new coding task".to_string());
+    let url = format!(
+        "https://chatgpt.com/codex?prompt={}",
+        urlencoding_simple(&base_prompt)
+    );
+    open_url(&url)
+}
+
+fn open_url(url: &str) -> Result<CommandResponse, String> {
+    let status = if cfg!(target_os = "windows") {
+        Command::new("cmd").args(["/c", "start", url]).spawn()
+    } else if cfg!(target_os = "macos") {
+        Command::new("open").arg(url).spawn()
+    } else {
+        Command::new("xdg-open")
+            .arg(url)
+            .spawn()
+            .or_else(|_| Command::new("sensible-browser").arg(url).spawn())
+    };
+
+    status
+        .map(|_| CommandResponse {
+            ok: true,
+            message: format!("Opened: {url}"),
+        })
+        .map_err(|e| format!("Failed to open URL: {e}"))
+}
+
+fn check_binary(name: &str) -> bool {
+    Command::new(name)
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+fn check_local_server(url: &str) -> bool {
+    Command::new("curl")
+        .args(["-sf", "--max-time", "2", url])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+fn check_python_import(module: &str) -> bool {
+    Command::new("python")
+        .args(["-c", &format!("import {module}")])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+        || Command::new("python3")
+            .args(["-c", &format!("import {module}")])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+}
+
+fn urlencoding_simple(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' => c.to_string(),
+            ' ' => '+'.to_string(),
+            _ => format!("%{:02X}", c as u8),
+        })
+        .collect()
 }

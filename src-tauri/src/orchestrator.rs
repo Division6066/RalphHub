@@ -84,19 +84,7 @@ pub fn deploy_to_pc(
         )?;
     }
 
-    if !workspace.join("package.json").exists() {
-        return Err(
-            "This repository does not contain a package.json. RalphHub will not fall back to npm."
-                .to_string(),
-        );
-    }
-
-    run_command(
-        "bun",
-        &["install"],
-        Some(&workspace),
-        "bun install failed for the managed workspace",
-    )?;
+    let install_msg = auto_install(&workspace)?;
 
     let branch = current_branch(&workspace).unwrap_or_else(|| "main".to_string());
     let state_path = ensure_state_file(&workspace)?;
@@ -115,7 +103,7 @@ pub fn deploy_to_pc(
         workspace_path: workspace.display().to_string(),
         normalized_url,
         branch,
-        message: "Repository cloned and initialized with Bun.".to_string(),
+        message: install_msg,
         state_path: state_path.display().to_string(),
         env_path: env_path.display().to_string(),
         notebook_path: None,
@@ -262,6 +250,56 @@ pub fn inject_keys(request: EnvInjectionRequest) -> Result<CommandResponse, Stri
         ok: true,
         message: format!("Injected keys into {}.", env_path.display()),
     })
+}
+
+fn auto_install(workspace: &Path) -> Result<String, String> {
+    if workspace.join("package.json").exists() {
+        run_command(
+            "bun",
+            &["install"],
+            Some(workspace),
+            "bun install failed",
+        )?;
+        return Ok("Repository installed with Bun.".to_string());
+    }
+
+    if workspace.join("requirements.txt").exists() {
+        let status = Command::new("pip")
+            .args(["install", "-r", "requirements.txt"])
+            .current_dir(workspace)
+            .output();
+        match status {
+            Ok(out) if out.status.success() => {
+                return Ok("Python dependencies installed via pip.".to_string());
+            }
+            Ok(out) => {
+                let err = String::from_utf8_lossy(&out.stderr);
+                return Err(format!("pip install failed: {err}"));
+            }
+            Err(e) => {
+                return Err(format!("pip not found: {e}. Install Python + pip first."));
+            }
+        }
+    }
+
+    if workspace.join("pyproject.toml").exists() {
+        let status = Command::new("pip")
+            .args(["install", "-e", "."])
+            .current_dir(workspace)
+            .output();
+        match status {
+            Ok(out) if out.status.success() => {
+                return Ok("Python package installed in editable mode via pip.".to_string());
+            }
+            _ => {}
+        }
+    }
+
+    if workspace.join("Cargo.toml").exists() {
+        return Ok("Rust project detected. Run `cargo build` manually or open in editor.".to_string());
+    }
+
+    Ok("Repository cloned. No recognized package manager files found; inspect manually.".to_string())
 }
 
 fn register_project(

@@ -4,25 +4,37 @@
 	import {
 		createEmptyKeyMap,
 		KEY_FIELDS,
+		KEY_LABELS,
 		loadKeys,
 		saveKeys,
 		type KeyField,
 		type KeyMap
 	} from '$lib/utils/secure-store';
 
-	const labels: Record<KeyField, string> = {
-		ANTHROPIC_API_KEY: 'Anthropic',
-		OPENAI_API_KEY: 'OpenAI',
-		GROK_API_KEY: 'Grok',
-		GEMINI_API_KEY: 'Gemini',
-		PERPLEXICA_KEYS: 'Perplexica'
-	};
-
 	let keys: KeyMap = createEmptyKeyMap();
 	let loading = true;
 	let saving = false;
 	let status = 'Loading secure vault...';
 	let error = '';
+	let revealed: Set<KeyField> = new Set();
+
+	const providerGroups = [
+		{
+			label: 'AI Providers',
+			color: 'cyan',
+			fields: ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'GROK_API_KEY', 'GEMINI_API_KEY', 'GLM_API_KEY'] as KeyField[]
+		},
+		{
+			label: 'Local Models',
+			color: 'violet',
+			fields: ['OLLAMA_API_KEY', 'OLLAMA_CLOUD_API_KEY'] as KeyField[]
+		},
+		{
+			label: 'Integrations',
+			color: 'amber',
+			fields: ['NOTION_API_KEY', 'GITHUB_TOKEN', 'HF_TOKEN', 'PERPLEXICA_KEYS'] as KeyField[]
+		}
+	];
 
 	onMount(async () => {
 		try {
@@ -30,7 +42,7 @@
 			status = 'Keys loaded from Stronghold.';
 		} catch (loadError) {
 			error = loadError instanceof Error ? loadError.message : 'Failed to load keys.';
-			status = 'Vault unavailable.';
+			status = 'Vault unavailable — running in browser preview mode.';
 		} finally {
 			loading = false;
 		}
@@ -43,7 +55,7 @@
 
 		try {
 			await saveKeys(keys);
-			status = 'Keys saved securely. Deploy flows can now inject them on confirmation.';
+			status = 'All keys saved securely. Deploy flows and tools will auto-inject them.';
 		} catch (saveError) {
 			error = saveError instanceof Error ? saveError.message : 'Failed to save keys.';
 			status = 'Save failed.';
@@ -51,81 +63,131 @@
 			saving = false;
 		}
 	}
+
+	function toggleReveal(field: KeyField) {
+		if (revealed.has(field)) {
+			revealed.delete(field);
+		} else {
+			revealed.add(field);
+		}
+		revealed = new Set(revealed);
+	}
+
+	function hasKey(field: KeyField) {
+		return keys[field]?.trim().length > 0;
+	}
 </script>
 
 <section class="space-y-6">
 	<div class="rounded-[2rem] border border-white/10 bg-slate-950/50 p-8 backdrop-blur">
 		<p class="text-sm uppercase tracking-[0.35em] text-cyan-300/80">Settings</p>
-		<h1 class="mt-4 text-4xl font-semibold tracking-tight text-white">Central API key manager.</h1>
+		<h1 class="mt-4 text-4xl font-semibold tracking-tight text-white">API Key Manager — Stronghold-secured.</h1>
 		<p class="mt-4 max-w-3xl text-base leading-7 text-slate-300">
-			Secrets will be stored via Tauri Stronghold, then injected into managed workspaces only
-			after explicit confirmation.
+			All secrets stored in Tauri Stronghold (argon2 encrypted, never leaves your machine).
+			Auto-injected into managed workspaces and tools on launch.
 		</p>
 	</div>
 
-	<div class="grid gap-4 xl:grid-cols-[1.3fr_0.8fr]">
-		<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-			<div class="flex items-start justify-between gap-4">
-				<div>
-					<h2 class="text-lg font-semibold text-white">Key inventory</h2>
-					<p class="mt-2 text-sm text-slate-400">
-						Saved into a Stronghold vault under RalphHub app data and only materialized into
-						project `.env` files when you explicitly approve an injection step.
-					</p>
-				</div>
-				<span class="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-100">
-					{loading ? 'Loading' : 'Ready'}
-				</span>
-			</div>
-
-			<form class="mt-6 space-y-4" on:submit|preventDefault={handleSave}>
-				{#each KEY_FIELDS as field}
-					<div class="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
-						<label class="block text-sm font-medium text-white" for={field}>{field}</label>
-						<p class="mt-2 text-xs uppercase tracking-[0.2em] text-slate-500">{labels[field]}</p>
-						<input
-							id={field}
-							type="password"
-							bind:value={keys[field]}
-							disabled={loading || saving}
-							autocomplete="off"
-							placeholder="Paste key value"
-							class="mt-4 w-full rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none"
-						/>
+	<div class="grid gap-6 xl:grid-cols-[1.4fr_0.7fr]">
+		<div class="space-y-6">
+			{#each providerGroups as group}
+				<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
+					<div class="flex items-center justify-between">
+						<h2 class="text-lg font-semibold text-white">{group.label}</h2>
+						<span class="text-xs text-slate-500">
+							{group.fields.filter(hasKey).length}/{group.fields.length} configured
+						</span>
 					</div>
-				{/each}
 
-				<div class="flex flex-wrap items-center gap-3">
-					<button
-						type="submit"
-						disabled={loading || saving}
-						class="rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 disabled:cursor-not-allowed disabled:opacity-60"
-					>
-						{saving ? 'Saving...' : 'Save to Stronghold'}
-					</button>
-					<p class="text-sm text-slate-400">{status}</p>
+					<form class="mt-4 space-y-3" on:submit|preventDefault={handleSave}>
+						{#each group.fields as field}
+							{@const meta = KEY_LABELS[field]}
+							<div class="rounded-2xl border border-white/8 bg-slate-950/60 p-4">
+								<div class="flex items-center justify-between">
+									<div>
+										<label class="text-sm font-medium text-white" for={field}>{meta.label}</label>
+										<p class="mt-0.5 text-xs text-slate-500">{meta.provider}</p>
+									</div>
+									<div class="flex items-center gap-2">
+										{#if hasKey(field)}
+											<span class="rounded-full bg-green-400/15 px-2 py-0.5 text-xs text-green-300">saved</span>
+										{/if}
+										<a
+											href={meta.url}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="rounded-full border border-white/10 px-2 py-0.5 text-xs text-slate-400 hover:text-white"
+										>
+											Get key ↗
+										</a>
+									</div>
+								</div>
+								<div class="relative mt-3">
+									<input
+										id={field}
+										type={revealed.has(field) ? 'text' : 'password'}
+										bind:value={keys[field]}
+										disabled={loading || saving}
+										autocomplete="off"
+										placeholder="Paste key value..."
+										class="w-full rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 pr-16 text-sm text-white outline-none placeholder:text-slate-600 disabled:opacity-50"
+									/>
+									<button
+										type="button"
+										on:click={() => toggleReveal(field)}
+										class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 hover:text-white"
+									>
+										{revealed.has(field) ? 'Hide' : 'Show'}
+									</button>
+								</div>
+							</div>
+						{/each}
+					</form>
 				</div>
-			</form>
+			{/each}
+
+			<div class="flex flex-wrap items-center gap-3">
+				<button
+					on:click={handleSave}
+					disabled={loading || saving}
+					class="rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+				>
+					{saving ? 'Saving...' : 'Save all keys to Stronghold'}
+				</button>
+				<p class="text-sm {error ? 'text-red-400' : 'text-slate-400'}">{status}</p>
+			</div>
 		</div>
 
 		<div class="space-y-4">
 			<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
+				<h2 class="text-lg font-semibold text-white">Key summary</h2>
+				<div class="mt-4 space-y-2">
+					{#each KEY_FIELDS as field}
+						<div class="flex items-center justify-between">
+							<span class="text-xs text-slate-400">{KEY_LABELS[field].provider}</span>
+							<span class="text-xs {hasKey(field) ? 'text-green-400' : 'text-slate-600'}">
+								{hasKey(field) ? '✓ saved' : '— empty'}
+							</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+
+			<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
 				<h2 class="text-lg font-semibold text-white">Injection policy</h2>
-				<ul class="mt-4 space-y-3 text-sm leading-6 text-slate-400">
-					<li>Bun remains the only package manager for RalphHub and managed projects.</li>
-					<li>Unknown repos will be flagged for sandbox review before launch.</li>
-					<li>`Open in Code` is required after deploy and launch operations.</li>
+				<ul class="mt-4 space-y-2 text-sm leading-6 text-slate-400 list-disc list-inside">
+					<li>Keys never leave your machine (Stronghold vault)</li>
+					<li>Injected into .env files only on explicit approval</li>
+					<li>Ollama local endpoint overrides remote keys</li>
+					<li>All tools auto-detect which keys they need</li>
 				</ul>
 			</div>
 
-			<div class="rounded-3xl border border-rose-400/20 bg-rose-500/10 p-6 backdrop-blur">
-				<h2 class="text-lg font-semibold text-white">Vault state</h2>
-				<p class="mt-3 text-sm leading-6 text-slate-300">
-					{#if error}
-						{error}
-					{:else}
-						No secrets are stored in the repo. This screen is the central source of truth for managed deploys and tool runs.
-					{/if}
+			<div class="rounded-3xl border border-violet-400/20 bg-violet-500/8 p-6 backdrop-blur">
+				<h2 class="text-sm font-semibold text-violet-200">Local-first model priority</h2>
+				<p class="mt-2 text-xs leading-5 text-slate-400">
+					When Ollama is running locally, all tools route requests through it by default.
+					Remote API keys are fallback. Configure in the Ollama tab.
 				</p>
 			</div>
 		</div>

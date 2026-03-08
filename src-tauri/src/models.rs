@@ -8,10 +8,93 @@ pub struct ToolManifest {
     pub repo_url: String,
     pub description: String,
     pub launch_command: String,
+    pub install_method: String,
     pub status: String,
     pub open_in_code: bool,
     pub needs_sandbox: bool,
     pub required_keys: Vec<String>,
+    pub categories: Vec<String>,
+    pub supports_ollama: bool,
+    pub supports_voice: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OllamaModel {
+    pub name: String,
+    pub display_name: String,
+    pub size_hint: String,
+    pub status: String,
+    pub is_default: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OllamaStatus {
+    pub installed: bool,
+    pub version: Option<String>,
+    pub running: bool,
+    pub endpoint: String,
+    pub models: Vec<OllamaModel>,
+    pub installer_hint: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceConfig {
+    pub enabled: bool,
+    pub stt_provider: String,
+    pub tts_provider: String,
+    pub stt_model: String,
+    pub tts_voice: String,
+    pub whisper_installed: bool,
+    pub piper_installed: bool,
+    pub offline_fallback: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryEntry {
+    pub id: String,
+    pub tool_id: String,
+    pub entry_type: String,
+    pub content: String,
+    pub created_at: String,
+    pub tags: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KaizenTask {
+    pub id: String,
+    pub title: String,
+    pub description: String,
+    pub status: String,
+    pub priority: String,
+    pub tool_id: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BrowserSession {
+    pub id: String,
+    pub url: String,
+    pub status: String,
+    pub backend: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolConnectResult {
+    pub tool_id: String,
+    pub ollama_ok: bool,
+    pub voice_ok: bool,
+    pub mcp_ok: bool,
+    pub cursor_ok: bool,
+    pub notes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

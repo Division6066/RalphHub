@@ -30,9 +30,15 @@
 	];
 
 	const milestones = [
-		'Bootstrap Bun-only Tauri + SvelteKit shell',
-		'Add Stronghold-backed central key manager',
-		'Implement deploy, tool launch, and workflow orchestration'
+		'Expand tool registry: all wishlist repos + auto-install + Connect & Test',
+		'Memory Spine + Kaizen Tasks: auto-write reports after every run',
+		'Ollama local models: auto-install, Mistral + Qwen + Llama, local-first routing',
+		'Local STT + TTS voice mode: faster-whisper + Piper, global toggle',
+		'Expanded API key manager: Ollama, GLM, Notion, GitHub, HF + all providers',
+		'Playwright MCP + browser connector: full Edge control via MCP protocol',
+		'One-click Cursor Desktop / Cursor Agent Web / Google Codex launch',
+		'Voice + Full Stack workflow: voice → research → tasks → MCP → memory → Notion',
+		'Final test pass: all wishlist tools, local models, voice, MCP — fully wired'
 	];
 
 	onMount(async () => {
