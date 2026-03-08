@@ -29,6 +29,7 @@ pub fn run() {
       commands::ensure_bun,
       commands::get_dashboard_snapshot,
       commands::get_editor_candidates,
+      commands::get_secure_store_config,
       commands::list_builtin_tools,
       commands::open_in_code,
     ])

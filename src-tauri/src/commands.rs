@@ -8,7 +8,7 @@ use std::{
 use tauri::State;
 
 use crate::{
-    models::{CommandResponse, DashboardSnapshot, ToolManifest},
+    models::{CommandResponse, DashboardSnapshot, SecureStoreConfig, ToolManifest},
     state::{bun_installer_hint, detect_bun_status, AppState},
     tool_registry::all_tools,
 };
@@ -89,6 +89,27 @@ pub fn open_in_code(workspace_path: String, branch: Option<String>) -> Result<Co
 #[tauri::command]
 pub fn get_editor_candidates() -> Vec<String> {
     editor_candidates()
+}
+
+#[tauri::command]
+pub fn get_secure_store_config(state: State<'_, AppState>) -> Result<SecureStoreConfig, String> {
+    let username = env::var("USERNAME")
+        .or_else(|_| env::var("USER"))
+        .unwrap_or_else(|_| "unknown-user".to_string());
+    let machine = env::var("COMPUTERNAME")
+        .or_else(|_| env::var("HOSTNAME"))
+        .unwrap_or_else(|_| "unknown-machine".to_string());
+
+    Ok(SecureStoreConfig {
+        vault_path: state
+            .paths
+            .app_data_dir
+            .join("ralphhub.vault.hold")
+            .display()
+            .to_string(),
+        client_name: "ralphhub-keys".to_string(),
+        vault_password: format!("ralphhub::{machine}::{username}::stronghold"),
+    })
 }
 
 fn ensure_state_file(workspace: &Path) -> Result<PathBuf, String> {

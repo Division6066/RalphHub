@@ -51,3 +51,11 @@ pub struct CommandResponse {
     pub ok: bool,
     pub message: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SecureStoreConfig {
+    pub vault_path: String,
+    pub client_name: String,
+    pub vault_password: String,
+}
