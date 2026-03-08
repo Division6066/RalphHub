@@ -440,3 +440,149 @@ pub fn decompose_task(
 
     Ok(subtasks)
 }
+
+// ─── Minimum Version ─────────────────────────────────────────────────────────
+
+/// Generate a "Minimum Version" subtask — fastest path to 80% of the value.
+/// The subtask is titled "MVP: <parent title>" with estimate capped at 25 min.
+#[tauri::command]
+pub fn generate_minimum_version(
+    task_id: String,
+    state: State<'_, AppState>,
+) -> Result<KaizenTask, String> {
+    let connection =
+        Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
+
+    let parent: KaizenTask = connection
+        .query_row(
+            "SELECT id, project_id, parent_task_id, title, domain, energy, estimate_minutes,
+                    status, do_date, deadline, agent_mode, approval_required, evidence, notes,
+                    created_at, updated_at
+             FROM kaizen_tasks WHERE id = ?1",
+            params![task_id],
+            map_kaizen_task,
+        )
+        .map_err(|e| e.to_string())?;
+
+    let mvp_estimate = (parent.estimate_minutes / 4).max(5).min(25);
+    let id = Uuid::new_v4().to_string();
+    let now = Utc::now().to_rfc3339();
+    let mvp_title = format!("MVP: {}", parent.title);
+    let notes = format!(
+        "Minimum Version of '{}'\nFocus: ship 80% value in {} minutes. Cut scope aggressively.",
+        parent.title, mvp_estimate
+    );
+
+    connection
+        .execute(
+            "INSERT INTO kaizen_tasks
+             (id, project_id, parent_task_id, title, domain, energy, estimate_minutes,
+              status, do_date, deadline, agent_mode, approval_required, evidence, notes,
+              created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, 'low', ?6, 'inbox', ?7, NULL, 'manual', 0, '{}', ?8, ?9, ?9)",
+            params![
+                id,
+                parent.project_id,
+                task_id,
+                mvp_title,
+                parent.domain,
+                mvp_estimate,
+                parent.do_date,
+                notes,
+                now
+            ],
+        )
+        .map_err(|e| e.to_string())?;
+
+    Ok(KaizenTask {
+        id,
+        project_id: parent.project_id,
+        parent_task_id: Some(task_id),
+        title: mvp_title,
+        domain: parent.domain,
+        energy: "low".to_string(),
+        estimate_minutes: mvp_estimate,
+        status: "inbox".to_string(),
+        do_date: parent.do_date,
+        deadline: None,
+        agent_mode: "manual".to_string(),
+        approval_required: false,
+        evidence: serde_json::Value::Object(Default::default()),
+        notes,
+        subtask_count: 0,
+        created_at: now.clone(),
+        updated_at: now,
+    })
+}
+
+/// Generate a "Low-Energy Version" — same task but re-scoped for low-energy state.
+/// Useful for ADHD/dyslexia: do something when brain fog hits.
+#[tauri::command]
+pub fn generate_low_energy_version(
+    task_id: String,
+    state: State<'_, AppState>,
+) -> Result<KaizenTask, String> {
+    let connection =
+        Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
+
+    let parent: KaizenTask = connection
+        .query_row(
+            "SELECT id, project_id, parent_task_id, title, domain, energy, estimate_minutes,
+                    status, do_date, deadline, agent_mode, approval_required, evidence, notes,
+                    created_at, updated_at
+             FROM kaizen_tasks WHERE id = ?1",
+            params![task_id],
+            map_kaizen_task,
+        )
+        .map_err(|e| e.to_string())?;
+
+    let low_estimate = (parent.estimate_minutes / 3).max(5).min(20);
+    let id = Uuid::new_v4().to_string();
+    let now = Utc::now().to_rfc3339();
+    let low_title = format!("🟢 Low-energy: {}", parent.title);
+    let notes = format!(
+        "Low-Energy Version of '{}'\nBrain fog mode: just do the simplest possible action in {} min.",
+        parent.title, low_estimate
+    );
+
+    connection
+        .execute(
+            "INSERT INTO kaizen_tasks
+             (id, project_id, parent_task_id, title, domain, energy, estimate_minutes,
+              status, do_date, deadline, agent_mode, approval_required, evidence, notes,
+              created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, 'low', ?6, 'inbox', ?7, NULL, 'manual', 0, '{}', ?8, ?9, ?9)",
+            params![
+                id,
+                parent.project_id,
+                task_id,
+                low_title,
+                parent.domain,
+                low_estimate,
+                parent.do_date,
+                notes,
+                now
+            ],
+        )
+        .map_err(|e| e.to_string())?;
+
+    Ok(KaizenTask {
+        id,
+        project_id: parent.project_id,
+        parent_task_id: Some(task_id),
+        title: low_title,
+        domain: parent.domain,
+        energy: "low".to_string(),
+        estimate_minutes: low_estimate,
+        status: "inbox".to_string(),
+        do_date: parent.do_date,
+        deadline: None,
+        agent_mode: "manual".to_string(),
+        approval_required: false,
+        evidence: serde_json::Value::Object(Default::default()),
+        notes,
+        subtask_count: 0,
+        created_at: now.clone(),
+        updated_at: now,
+    })
+}

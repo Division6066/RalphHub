@@ -66,6 +66,8 @@ pub fn run() {
       tasks::get_today_board,
       tasks::get_kanban_board,
       tasks::decompose_task,
+      tasks::generate_minimum_version,
+      tasks::generate_low_energy_version,
       // ── AmitOS Inbox + Daily Log ──────────────────────────────────────────
       tasks_inbox::add_inbox_item,
       tasks_inbox::list_inbox_items,

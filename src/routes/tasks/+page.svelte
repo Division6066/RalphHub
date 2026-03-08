@@ -178,6 +178,26 @@
 		}
 	}
 
+	async function generateMvp(id: string) {
+		if (!isDesktopRuntime()) return;
+		try {
+			await invokeTauri('generate_minimum_version', { taskId: id });
+			await load();
+		} catch (e) {
+			error = String(e);
+		}
+	}
+
+	async function generateLowEnergy(id: string) {
+		if (!isDesktopRuntime()) return;
+		try {
+			await invokeTauri('generate_low_energy_version', { taskId: id });
+			await load();
+		} catch (e) {
+			error = String(e);
+		}
+	}
+
 	onMount(load);
 </script>
 
@@ -260,6 +280,8 @@
 											{#if task.estimateMinutes > 90}
 												<button onclick={() => decompose(task.id)} class="rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] font-medium text-orange-300 hover:bg-orange-500/30">✂ Decompose >{90}m</button>
 											{/if}
+											<button onclick={() => generateMvp(task.id)} class="rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-medium text-violet-300 hover:bg-violet-500/30" title="Generate Minimum Version">⚡ MVP</button>
+											<button onclick={() => generateLowEnergy(task.id)} class="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-300 hover:bg-emerald-500/30" title="Generate Low-Energy Version">🟢 Low-E</button>
 										</div>
 									</div>
 
