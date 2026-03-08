@@ -28,7 +28,9 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.10.3", features = [] }
 tauri-plugin-log = "2"
+tauri-plugin-opener = "2"
 tauri-plugin-stronghold = "2.3.1"
+uuid = { version = "1", features = ["v4"] }
 
 [profile.dev.package.scrypt]
 opt-level = 3

@@ -164,6 +164,18 @@ fn initialize_database(path: &Path) -> Result<()> {
             git_ref TEXT,
             created_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS browser_actions (
+            id TEXT PRIMARY KEY,
+            action_type TEXT NOT NULL,
+            target TEXT NOT NULL,
+            url TEXT NOT NULL,
+            details TEXT,
+            status TEXT NOT NULL,
+            screenshot_path TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         ",
     )?;
 
