@@ -189,7 +189,7 @@ pub fn speak_text(text: String, voice: Option<String>) -> Result<CommandResponse
 fn create_notion_page(
     api_key: &str,
     title: &str,
-    summary: &str,
+    _summary: &str,
     content: &str,
 ) -> Result<String, String> {
     let payload = serde_json::json!({

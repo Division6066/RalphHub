@@ -251,27 +251,21 @@ fn ensure_ollama_running() -> bool {
 }
 
 fn install_ollama() -> Result<(), String> {
-    let status = if cfg!(target_os = "windows") {
-        Command::new("powershell")
-            .args(["-c", "irm https://ollama.ai/install.ps1 | iex"])
-            .status()
-    } else if cfg!(target_os = "macos") {
-        Command::new("sh")
-            .args(["-c", "curl -fsSL https://ollama.ai/install.sh | sh"])
-            .status()
+    let install_cmd = if cfg!(target_os = "windows") {
+        ("powershell", vec!["-c", "irm https://ollama.ai/install.ps1 | iex"])
     } else {
-        Command::new("sh")
-            .args(["-c", "curl -fsSL https://ollama.ai/install.sh | sh"])
-            .status()
-    }
-    .map_err(|e| format!("Failed to run Ollama installer: {e}"))?;
+        ("sh", vec!["-c", "curl -fsSL https://ollama.ai/install.sh | sh"])
+    };
+
+    let status = Command::new(install_cmd.0)
+        .args(install_cmd.1)
+        .status()
+        .map_err(|e| format!("Failed to run Ollama installer: {e}"))?;
 
     if status.success() {
         Ok(())
     } else {
-        Err(format!(
-            "Ollama installation failed. Install manually from https://ollama.ai and restart RalphHub."
-        ))
+        Err("Ollama installation failed. Install manually from https://ollama.ai and restart RalphHub.".to_string())
     }
 }
 

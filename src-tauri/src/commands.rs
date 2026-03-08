@@ -283,7 +283,7 @@ pub fn connect_and_test_tool(tool_id: String) -> ToolConnectResult {
         notes.push("Voice not configured (open Voice tab to install).".to_string());
     }
 
-    let mcp_ok = check_local_server(&format!("http://localhost:8931"));
+    let mcp_ok = check_local_server("http://localhost:8931");
     if mcp_ok {
         notes.push("Playwright MCP server reachable.".to_string());
     } else {
