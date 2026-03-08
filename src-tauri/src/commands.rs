@@ -238,6 +238,25 @@ fn editor_candidates() -> Vec<String> {
     candidates
 }
 
+// ── Key injection helper ─────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn get_key_fields() -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({"field": "ANTHROPIC_API_KEY", "provider": "Anthropic", "group": "ai"}),
+        serde_json::json!({"field": "OPENAI_API_KEY", "provider": "OpenAI", "group": "ai"}),
+        serde_json::json!({"field": "GROK_API_KEY", "provider": "xAI Grok", "group": "ai"}),
+        serde_json::json!({"field": "GEMINI_API_KEY", "provider": "Google Gemini", "group": "ai"}),
+        serde_json::json!({"field": "GLM_API_KEY", "provider": "Zhipu GLM", "group": "ai"}),
+        serde_json::json!({"field": "OLLAMA_API_KEY", "provider": "Ollama Local", "group": "local"}),
+        serde_json::json!({"field": "OLLAMA_CLOUD_API_KEY", "provider": "Ollama Cloud", "group": "local"}),
+        serde_json::json!({"field": "NOTION_API_KEY", "provider": "Notion", "group": "integrations"}),
+        serde_json::json!({"field": "GITHUB_TOKEN", "provider": "GitHub", "group": "integrations"}),
+        serde_json::json!({"field": "HF_TOKEN", "provider": "Hugging Face", "group": "integrations"}),
+        serde_json::json!({"field": "PERPLEXICA_KEYS", "provider": "Perplexica", "group": "tools"}),
+    ]
+}
+
 // ── Multi-integration "Connect & Test" ───────────────────────────────────────
 
 #[tauri::command]

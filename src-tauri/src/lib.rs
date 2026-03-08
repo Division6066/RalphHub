@@ -40,6 +40,7 @@ pub fn run() {
       commands::get_secure_store_config,
       commands::list_builtin_tools,
       commands::open_in_code,
+      commands::get_key_fields,
       commands::connect_and_test_tool,
       commands::launch_in_cursor_desktop,
       commands::launch_in_cursor_agent_web,
