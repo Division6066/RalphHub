@@ -99,6 +99,19 @@ pub fn deploy_to_pc(
         "ready",
     )?;
 
+    // Auto-write to Memory Spine after deploy
+    auto_memory_write(
+        &state,
+        &slug,
+        "report",
+        &format!(
+            "## Deploy Report\n\n**Repo:** {normalized_url}\n**Branch:** {branch}\n**Path:** {}\n**Install:** {install_msg}\n**Time:** {}\n",
+            workspace.display(),
+            Utc::now().to_rfc3339()
+        ),
+        "deploy,auto",
+    );
+
     Ok(DeployResult {
         workspace_path: workspace.display().to_string(),
         normalized_url,
@@ -108,6 +121,22 @@ pub fn deploy_to_pc(
         env_path: env_path.display().to_string(),
         notebook_path: None,
     })
+}
+
+#[tauri::command]
+pub fn deploy_tool_by_id(
+    tool_id: String,
+    state: State<'_, AppState>,
+) -> Result<DeployResult, String> {
+    use crate::tool_registry::tool_by_id;
+    let tool = tool_by_id(&tool_id)
+        .ok_or_else(|| format!("Unknown tool ID: {tool_id}"))?;
+
+    if tool.repo_url.starts_with("internal://") {
+        return Err(format!("{} is an internal capability and does not need deployment.", tool.name));
+    }
+
+    deploy_to_pc(DeployRequest { url: tool.repo_url }, state)
 }
 
 #[tauri::command]
@@ -250,6 +279,17 @@ pub fn inject_keys(request: EnvInjectionRequest) -> Result<CommandResponse, Stri
         ok: true,
         message: format!("Injected keys into {}.", env_path.display()),
     })
+}
+
+fn auto_memory_write(state: &AppState, tool_id: &str, entry_type: &str, content: &str, tags: &str) {
+    if let Ok(conn) = Connection::open(&state.paths.database_path) {
+        let id = format!("{tool_id}-{}", Utc::now().format("%Y%m%d%H%M%S%3f"));
+        let now = Utc::now().to_rfc3339();
+        let _ = conn.execute(
+            "INSERT INTO memory_entries (id, tool_id, entry_type, content, tags, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![id, tool_id, entry_type, content, tags, now],
+        );
+    }
 }
 
 fn auto_install(workspace: &Path) -> Result<String, String> {

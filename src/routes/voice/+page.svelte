@@ -94,6 +94,7 @@
 			</div>
 			<button
 				on:click={() => (globalVoiceEnabled = !globalVoiceEnabled)}
+				aria-label="Toggle global voice mode"
 				class="relative inline-flex h-8 w-14 items-center rounded-full transition {globalVoiceEnabled ? 'bg-cyan-500' : 'bg-slate-700'}"
 			>
 				<span
@@ -126,11 +127,11 @@
 
 				<div class="mt-4 space-y-3">
 					<div>
-						<label class="text-xs text-slate-500">STT Provider</label>
+						<p class="text-xs text-slate-500">STT Provider</p>
 						<p class="mt-1 text-sm text-white font-mono">{config.sttProvider}</p>
 					</div>
 					<div>
-						<label class="text-xs text-slate-500">Model size</label>
+						<p class="text-xs text-slate-500">Model size</p>
 						<p class="mt-1 text-sm text-white">{config.sttModel}</p>
 						<p class="text-xs text-slate-500 mt-1">base ≈ 145MB | small ≈ 466MB | medium ≈ 1.5GB</p>
 					</div>
@@ -159,16 +160,16 @@
 
 				<div class="mt-4 space-y-3">
 					<div>
-						<label class="text-xs text-slate-500">TTS Provider</label>
+						<p class="text-xs text-slate-500">TTS Provider</p>
 						<p class="mt-1 text-sm text-white font-mono">{config.ttsProvider}</p>
 					</div>
 					<div>
-						<label class="text-xs text-slate-500">Selected voice</label>
+						<p class="text-xs text-slate-500">Selected voice</p>
 						<p class="mt-1 text-sm text-white">{config.ttsVoice}</p>
 					</div>
 					{#if voices.length > 0}
 						<div>
-							<label class="text-xs text-slate-500">Available voices</label>
+							<p class="text-xs text-slate-500">Available voices</p>
 							<div class="mt-2 flex flex-wrap gap-2">
 								{#each voices as voice}
 									<span class="rounded-full border border-white/10 px-2 py-0.5 text-xs text-slate-300">{voice}</span>

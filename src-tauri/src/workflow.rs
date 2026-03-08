@@ -10,6 +10,17 @@ use crate::{
     tool_registry::all_tools,
 };
 
+fn write_to_memory(state: &AppState, tool_id: &str, content: &str) {
+    if let Ok(conn) = Connection::open(&state.paths.database_path) {
+        let id = format!("workflow-{}", Utc::now().format("%Y%m%d%H%M%S%3f"));
+        let now = Utc::now().to_rfc3339();
+        let _ = conn.execute(
+            "INSERT INTO memory_entries (id, tool_id, entry_type, content, tags, created_at) VALUES (?1, ?2, 'report', ?3, 'workflow,auto', ?4)",
+            params![id, tool_id, content, now],
+        );
+    }
+}
+
 #[tauri::command]
 pub fn create_workflow_run(
     request: WorkflowRequest,
@@ -82,10 +93,23 @@ pub fn create_workflow_run(
         config_path: config_path.display().to_string(),
         state_path: state_path.display().to_string(),
         created_at: timestamp.clone(),
-        updated_at: timestamp,
+        updated_at: timestamp.clone(),
     };
 
     insert_workflow_run(&state, &run)?;
+
+    write_to_memory(
+        &state,
+        "workflow-composer",
+        &format!(
+            "## Workflow Created\n\n**Name:** {}\n**Model:** {}\n**Tools:** {}\n**ID:** {}\n**Time:** {}\n",
+            run.workflow_name,
+            run.model_name,
+            run.tool_ids.join(", "),
+            run.id,
+            timestamp
+        ),
+    );
 
     Ok(run)
 }

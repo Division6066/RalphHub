@@ -404,6 +404,7 @@ pub fn all_tools() -> Vec<ToolManifest> {
     BUILTIN_TOOLS.clone()
 }
 
+#[allow(dead_code)]
 pub fn tool_by_id(id: &str) -> Option<ToolManifest> {
     BUILTIN_TOOLS.iter().find(|t| t.id == id).cloned()
 }

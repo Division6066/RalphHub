@@ -47,6 +47,7 @@ pub fn run() {
       // Deploy / Orchestrator
       orchestrator::deploy_to_colab,
       orchestrator::deploy_to_pc,
+      orchestrator::deploy_tool_by_id,
       orchestrator::inject_keys,
       orchestrator::list_managed_projects,
       // Workflows
