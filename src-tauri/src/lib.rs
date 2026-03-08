@@ -3,6 +3,7 @@ mod models;
 mod orchestrator;
 mod state;
 mod tool_registry;
+mod workflow;
 
 use state::AppState;
 use tauri::Manager;
@@ -37,6 +38,8 @@ pub fn run() {
       orchestrator::deploy_to_pc,
       orchestrator::inject_keys,
       orchestrator::list_managed_projects,
+      workflow::create_workflow_run,
+      workflow::list_workflow_runs,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

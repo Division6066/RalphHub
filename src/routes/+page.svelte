@@ -1,8 +1,32 @@
 <script lang="ts">
-	const quickStats = [
-		{ label: 'Managed tools', value: '9', detail: 'Built-in launch manifests' },
-		{ label: 'Package manager', value: 'Bun only', detail: 'No npm fallback' },
-		{ label: 'Workflow mode', value: 'Overnight', detail: 'Crash-resilient loop state' }
+	import { invoke } from '@tauri-apps/api/core';
+	import { onMount } from 'svelte';
+
+	type DashboardSnapshot = {
+		bun: { installed: boolean; version?: string | null };
+		managedProjectCount: number;
+		workflowRunCount: number;
+		overnightLoopCount: number;
+	};
+
+	type ManagedProject = {
+		id: string;
+		slug: string;
+		sourceUrl: string;
+		status: string;
+		branch: string;
+		workspacePath: string;
+	};
+
+	let snapshot: DashboardSnapshot | null = null;
+	let projects: ManagedProject[] = [];
+	let loading = true;
+	let error = '';
+
+	$: quickStats = [
+		{ label: 'Managed projects', value: String(snapshot?.managedProjectCount ?? 0), detail: 'Tracked in SQLite' },
+		{ label: 'Package manager', value: snapshot?.bun.installed ? `Bun ${snapshot?.bun.version ?? ''}`.trim() : 'Missing', detail: 'No npm fallback' },
+		{ label: 'Workflow runs', value: String(snapshot?.workflowRunCount ?? 0), detail: 'Prepared overnight chains' }
 	];
 
 	const milestones = [
@@ -10,6 +34,21 @@
 		'Add Stronghold-backed central key manager',
 		'Implement deploy, tool launch, and workflow orchestration'
 	];
+
+	onMount(async () => {
+		try {
+			const [dashboard, managedProjects] = await Promise.all([
+				invoke<DashboardSnapshot>('get_dashboard_snapshot'),
+				invoke<ManagedProject[]>('list_managed_projects')
+			]);
+			snapshot = dashboard;
+			projects = managedProjects;
+		} catch (loadError) {
+			error = loadError instanceof Error ? loadError.message : 'Failed to load dashboard.';
+		} finally {
+			loading = false;
+		}
+	});
 </script>
 
 <section class="space-y-6">
@@ -75,8 +114,13 @@
 		<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
 			<h2 class="text-lg font-semibold text-white">Current status</h2>
 			<p class="mt-4 text-sm leading-6 text-slate-400">
-				The app shell is live. Secure key storage, managed repo workspaces, deploy execution,
-				and workflow chaining will land in the next passes.
+				{#if error}
+					{error}
+				{:else if loading}
+					Loading RalphHub runtime state...
+				{:else}
+					Bun status, deploy state, and workflow counts are now coming from the Tauri backend.
+				{/if}
 			</p>
 			<div class="mt-6 rounded-2xl border border-violet-400/20 bg-violet-500/10 p-4">
 				<p class="text-xs uppercase tracking-[0.25em] text-violet-200/80">Target</p>
@@ -85,6 +129,34 @@
 					release artifacts.
 				</p>
 			</div>
+		</div>
+	</div>
+
+	<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
+		<div class="flex items-center justify-between">
+			<h2 class="text-lg font-semibold text-white">Managed workspaces</h2>
+			<span class="text-sm text-slate-500">{projects.length} tracked</span>
+		</div>
+
+		<div class="mt-6 space-y-3">
+			{#if !projects.length}
+				<p class="text-sm text-slate-500">No managed repos yet. Deploy one from the Deploy tab.</p>
+			{:else}
+				{#each projects as project}
+					<div class="rounded-2xl border border-white/8 bg-white/3 p-4">
+						<div class="flex items-center justify-between gap-4">
+							<div>
+								<p class="text-sm font-medium text-white">{project.slug}</p>
+								<p class="mt-1 text-xs text-slate-500">{project.sourceUrl}</p>
+							</div>
+							<span class="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100">
+								{project.status}
+							</span>
+						</div>
+						<p class="mt-2 text-xs text-slate-500">Branch: {project.branch}</p>
+					</div>
+				{/each}
+			{/if}
 		</div>
 	</div>
 </section>

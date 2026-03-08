@@ -104,3 +104,25 @@ pub struct ManagedProject {
     pub created_at: String,
     pub updated_at: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkflowRequest {
+    pub name: String,
+    pub tool_ids: Vec<String>,
+    pub model_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkflowRun {
+    pub id: String,
+    pub workflow_name: String,
+    pub tool_ids: Vec<String>,
+    pub model_name: String,
+    pub status: String,
+    pub config_path: String,
+    pub state_path: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
