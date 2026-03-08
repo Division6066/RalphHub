@@ -22,7 +22,7 @@ pub fn run() {
       app.handle()
         .plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
 
-      let state = AppState::init(&app.handle()).expect("failed to initialize RalphHub state");
+      let state = AppState::init(app.handle()).expect("failed to initialize RalphHub state");
       app.manage(state);
 
       Ok(())

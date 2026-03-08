@@ -191,12 +191,11 @@ enum CountTable {
 }
 
 fn query_count(connection: &Connection, table: CountTable) -> Result<i64> {
-    let query = match table {
+    let sql = match table {
         CountTable::ManagedProjects => "SELECT COUNT(*) FROM managed_projects",
         CountTable::WorkflowRuns => "SELECT COUNT(*) FROM workflow_runs",
         CountTable::OvernightLoops => "SELECT COUNT(*) FROM overnight_loops",
     };
-    let mut statement = connection.prepare(query)?;
-    let count = statement.query_row([], |row| row.get(0))?;
+    let count = connection.query_row(sql, [], |row| row.get(0))?;
     Ok(count)
 }

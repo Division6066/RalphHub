@@ -70,13 +70,11 @@ pub fn open_in_code(workspace_path: String, branch: Option<String>) -> Result<Co
         return Err(format!("Workspace does not exist: {workspace_path}"));
     }
 
-    if let Some(branch) = branch.filter(|branch| !branch.trim().is_empty()) {
-        validate_branch_name(&branch)?;
-        let _ = Command::new("git")
-            .args(["checkout", branch.as_str()])
-            .current_dir(&workspace)
-            .status();
-    }
+    // `branch` is informational only; the repo is already on the correct branch
+    // after deploy_to_pc. Free-form git checkout is not performed here because
+    // it creates an unnecessary Git invocation surface and is redundant in the
+    // current call flow.
+    let _ = branch;
 
     let state_file = ensure_state_file(&workspace).map_err(|error| error.to_string())?;
     let launched = launch_editor(&workspace, &state_file).map_err(|error| error.to_string())?;
@@ -238,31 +236,4 @@ fn editor_candidates() -> Vec<String> {
     }
 
     candidates
-}
-
-fn validate_branch_name(branch: &str) -> Result<(), String> {
-    // Command does not invoke a shell, but untrusted refs should still be validated
-    // so invalid or option-like values cannot be passed through to Git.
-    if branch.starts_with('-') {
-        return Err("Branch names cannot start with '-'.".to_string());
-    }
-
-    if branch.chars().any(char::is_whitespace) {
-        return Err("Branch names cannot contain whitespace.".to_string());
-    }
-
-    let output = Command::new("git")
-        .args(["check-ref-format", "--branch", branch])
-        .output()
-        .map_err(|error| error.to_string())?;
-
-    if output.status.success() {
-        Ok(())
-    } else {
-        Err(format!(
-            "Invalid branch name '{}': {}",
-            branch,
-            String::from_utf8_lossy(&output.stderr).trim()
-        ))
-    }
 }
