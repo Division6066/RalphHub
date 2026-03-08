@@ -52,9 +52,9 @@ impl AppState {
 
     pub fn snapshot(&self) -> Result<DashboardSnapshot> {
         let connection = Connection::open(&self.paths.database_path)?;
-        let managed_project_count = query_count(&connection, "managed_projects")?;
-        let workflow_run_count = query_count(&connection, "workflow_runs")?;
-        let overnight_loop_count = query_count(&connection, "overnight_loops")?;
+        let managed_project_count = query_count(&connection, CountTable::ManagedProjects)?;
+        let workflow_run_count = query_count(&connection, CountTable::WorkflowRuns)?;
+        let overnight_loop_count = query_count(&connection, CountTable::OvernightLoops)?;
 
         Ok(DashboardSnapshot {
             bun: detect_bun_status(),
@@ -184,8 +184,19 @@ fn initialize_database(path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn query_count(connection: &Connection, table: &str) -> Result<i64> {
-    let mut statement = connection.prepare(&format!("SELECT COUNT(*) FROM {table}"))?;
+enum CountTable {
+    ManagedProjects,
+    WorkflowRuns,
+    OvernightLoops,
+}
+
+fn query_count(connection: &Connection, table: CountTable) -> Result<i64> {
+    let query = match table {
+        CountTable::ManagedProjects => "SELECT COUNT(*) FROM managed_projects",
+        CountTable::WorkflowRuns => "SELECT COUNT(*) FROM workflow_runs",
+        CountTable::OvernightLoops => "SELECT COUNT(*) FROM overnight_loops",
+    };
+    let mut statement = connection.prepare(query)?;
     let count = statement.query_row([], |row| row.get(0))?;
     Ok(count)
 }
