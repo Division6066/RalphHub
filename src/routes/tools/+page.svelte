@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
+	import { invokeTauri, isDesktopRuntime } from '$lib/utils/desktop';
 
 	type ToolManifest = {
 		id: string;
@@ -23,7 +23,12 @@
 	let status = '';
 
 	onMount(async () => {
-		tools = await invoke<ToolManifest[]>('list_builtin_tools');
+		if (!isDesktopRuntime()) {
+			loading = false;
+			return;
+		}
+
+		tools = await invokeTauri<ToolManifest[]>('list_builtin_tools');
 		loading = false;
 	});
 
@@ -37,9 +42,9 @@
 		status = `Launching ${tool.name}...`;
 
 		try {
-			await invoke('ensure_bun');
-			const result = await invoke<DeployResult>('deploy_to_pc', { request: { url: tool.repoUrl } });
-			await invoke('open_in_code', {
+			await invokeTauri('ensure_bun');
+			const result = await invokeTauri<DeployResult>('deploy_to_pc', { request: { url: tool.repoUrl } });
+			await invokeTauri('open_in_code', {
 				workspacePath: result.workspacePath,
 				branch: result.branch
 			});

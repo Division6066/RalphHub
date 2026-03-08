@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
+	import { invokeTauri, isDesktopRuntime } from '$lib/utils/desktop';
 
 	type ToolManifest = {
 		id: string;
@@ -32,12 +32,21 @@
 	let runs: WorkflowRun[] = [];
 
 	onMount(async () => {
-		tools = await invoke<ToolManifest[]>('list_builtin_tools');
-		runs = await invoke<WorkflowRun[]>('list_workflow_runs');
+		if (!isDesktopRuntime()) {
+			return;
+		}
+
+		tools = await invokeTauri<ToolManifest[]>('list_builtin_tools');
+		runs = await invokeTauri<WorkflowRun[]>('list_workflow_runs');
 	});
 
 	async function createWorkflow() {
-		const run = await invoke<WorkflowRun>('create_workflow_run', {
+		if (!isDesktopRuntime()) {
+			workflowStatus = 'Workflow preparation is available in the RalphHub desktop runtime.';
+			return;
+		}
+
+		const run = await invokeTauri<WorkflowRun>('create_workflow_run', {
 			request: {
 				name: workflowName,
 				modelName,

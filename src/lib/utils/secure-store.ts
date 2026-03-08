@@ -1,5 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
-import { Stronghold } from '@tauri-apps/plugin-stronghold';
+import { isDesktopRuntime, invokeTauri } from '$lib/utils/desktop';
 
 export const KEY_FIELDS = [
 	'ANTHROPIC_API_KEY',
@@ -33,7 +32,14 @@ export function createEmptyKeyMap(): KeyMap {
 
 export async function loadKeys(): Promise<KeyMap> {
 	const defaults = createEmptyKeyMap();
-	const config = await invoke<SecureStoreConfig>('get_secure_store_config');
+	if (!isDesktopRuntime()) {
+		return defaults;
+	}
+
+	const [{ Stronghold }, config] = await Promise.all([
+		import('@tauri-apps/plugin-stronghold'),
+		invokeTauri<SecureStoreConfig>('get_secure_store_config')
+	]);
 	const stronghold = await Stronghold.load(config.vaultPath, config.vaultPassword);
 	const client = await getClient(stronghold, config.clientName);
 	const store = client.getStore();
@@ -51,7 +57,14 @@ export async function loadKeys(): Promise<KeyMap> {
 }
 
 export async function saveKeys(values: KeyMap): Promise<void> {
-	const config = await invoke<SecureStoreConfig>('get_secure_store_config');
+	if (!isDesktopRuntime()) {
+		throw new Error('Secure storage is only available inside the RalphHub desktop runtime.');
+	}
+
+	const [{ Stronghold }, config] = await Promise.all([
+		import('@tauri-apps/plugin-stronghold'),
+		invokeTauri<SecureStoreConfig>('get_secure_store_config')
+	]);
 	const stronghold = await Stronghold.load(config.vaultPath, config.vaultPassword);
 	const client = await getClient(stronghold, config.clientName);
 	const store = client.getStore();
@@ -73,7 +86,7 @@ export async function saveKeys(values: KeyMap): Promise<void> {
 	}
 }
 
-async function getClient(stronghold: Stronghold, clientName: string) {
+async function getClient(stronghold: { loadClient(name: string): Promise<any>; createClient(name: string): Promise<any> }, clientName: string) {
 	try {
 		return await stronghold.loadClient(clientName);
 	} catch {

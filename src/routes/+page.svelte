@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
+	import { invokeTauri, isDesktopRuntime } from '$lib/utils/desktop';
 
 	type DashboardSnapshot = {
 		bun: { installed: boolean; version?: string | null };
@@ -36,10 +36,15 @@
 	];
 
 	onMount(async () => {
+		if (!isDesktopRuntime()) {
+			loading = false;
+			return;
+		}
+
 		try {
 			const [dashboard, managedProjects] = await Promise.all([
-				invoke<DashboardSnapshot>('get_dashboard_snapshot'),
-				invoke<ManagedProject[]>('list_managed_projects')
+				invokeTauri<DashboardSnapshot>('get_dashboard_snapshot'),
+				invokeTauri<ManagedProject[]>('list_managed_projects')
 			]);
 			snapshot = dashboard;
 			projects = managedProjects;

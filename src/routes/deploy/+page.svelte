@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { invoke } from '@tauri-apps/api/core';
-
+	import { invokeTauri, isDesktopRuntime } from '$lib/utils/desktop';
 	import { KEY_FIELDS, loadKeys, type KeyMap } from '$lib/utils/secure-store';
 
 	type DeployResult = {
@@ -36,20 +35,25 @@
 	let lastResult: DeployResult | null = null;
 
 	async function deployToPc() {
+		if (!isDesktopRuntime()) {
+			status = 'Deploy actions are available in the RalphHub desktop runtime.';
+			return;
+		}
+
 		loading = true;
 		error = '';
 		status = 'Ensuring Bun and cloning the repository...';
 
 		try {
-			await invoke('ensure_bun');
-			const result = await invoke<DeployResult>('deploy_to_pc', { request: { url: repoUrl } });
+			await invokeTauri('ensure_bun');
+			const result = await invokeTauri<DeployResult>('deploy_to_pc', { request: { url: repoUrl } });
 			lastResult = result;
 			status = result.message;
 
 			const keys = await loadKeys();
 			const entries = buildEnvEntries(keys);
 			if (entries.length && window.confirm('Inject your saved central API keys into this workspace now?')) {
-				await invoke('inject_keys', {
+				await invokeTauri('inject_keys', {
 					request: {
 						workspacePath: result.workspacePath,
 						entries
@@ -58,7 +62,7 @@
 				status = 'Repository deployed, keys injected, and workspace is ready.';
 			}
 
-			await invoke('open_in_code', {
+			await invokeTauri('open_in_code', {
 				workspacePath: result.workspacePath,
 				branch: result.branch
 			});
@@ -71,12 +75,17 @@
 	}
 
 	async function deployToColab() {
+		if (!isDesktopRuntime()) {
+			status = 'Colab generation is available in the RalphHub desktop runtime.';
+			return;
+		}
+
 		loading = true;
 		error = '';
 		status = 'Generating Colab notebook...';
 
 		try {
-			const result = await invoke<DeployResult>('deploy_to_colab', { request: { url: repoUrl } });
+			const result = await invokeTauri<DeployResult>('deploy_to_colab', { request: { url: repoUrl } });
 			lastResult = result;
 			status = result.notebookPath
 				? `Colab notebook generated at ${result.notebookPath}`
