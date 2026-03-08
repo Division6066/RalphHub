@@ -8,10 +8,13 @@ use chrono::Utc;
 use rusqlite::{params, Connection};
 use tauri::State;
 
+use uuid::Uuid;
+
 use crate::{
     models::{
         CommandResponse, DeployRequest, DeployResult, EnvInjectionRequest, ManagedProject,
     },
+    memory::write_daily_log_entry,
     state::{detect_bun_status, AppState},
 };
 
@@ -111,15 +114,26 @@ pub fn deploy_to_pc(
         "ready",
     )?;
 
-    Ok(DeployResult {
+    let result = DeployResult {
         workspace_path: workspace.display().to_string(),
-        normalized_url,
-        branch,
+        normalized_url: normalized_url.clone(),
+        branch: branch.clone(),
         message: "Repository cloned and initialized with Bun.".to_string(),
         state_path: state_path.display().to_string(),
         env_path: env_path.display().to_string(),
         notebook_path: None,
-    })
+    };
+
+    // Auto-write deploy event to Memory Spine + Daily Log
+    auto_write_memory_event(
+        &state,
+        "workflow",
+        &format!("Deploy: {normalized_url} → branch {branch}"),
+        "deploy",
+        &format!("Deployed {slug} at {}", Utc::now().to_rfc3339()),
+    );
+
+    Ok(result)
 }
 
 #[tauri::command]
@@ -262,6 +276,18 @@ pub fn inject_keys(request: EnvInjectionRequest) -> Result<CommandResponse, Stri
         ok: true,
         message: format!("Injected keys into {}.", env_path.display()),
     })
+}
+
+fn auto_write_memory_event(state: &AppState, source_type: &str, content: &str, log_entry_type: &str, log_title: &str) {
+    if let Ok(conn) = Connection::open(&state.paths.database_path) {
+        let id = Uuid::new_v4().to_string();
+        let now = Utc::now().to_rfc3339();
+        let _ = conn.execute(
+            "INSERT INTO raw_events (id, source_type, content, metadata, created_at) VALUES (?1, ?2, ?3, '{}', ?4)",
+            params![id, source_type, content, now],
+        );
+        let _ = write_daily_log_entry(&conn, &now[..10], log_entry_type, log_title, content);
+    }
 }
 
 fn register_project(

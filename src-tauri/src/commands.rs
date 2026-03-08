@@ -5,9 +5,12 @@ use std::{
     process::Command,
 };
 
+use chrono::Utc;
 use tauri::State;
+use uuid::Uuid;
 
 use crate::{
+    memory::write_daily_log_entry,
     models::{CommandResponse, DashboardSnapshot, SecureStoreConfig, ToolManifest},
     state::{bun_installer_hint, detect_bun_status, AppState},
     tool_registry::all_tools,
@@ -64,14 +67,14 @@ pub fn ensure_bun() -> Result<CommandResponse, String> {
 }
 
 #[tauri::command]
-pub fn open_in_code(workspace_path: String, branch: Option<String>) -> Result<CommandResponse, String> {
+pub fn open_in_code(workspace_path: String, branch: Option<String>, state: State<'_, AppState>) -> Result<CommandResponse, String> {
     let workspace = PathBuf::from(&workspace_path);
     if !workspace.exists() {
         return Err(format!("Workspace does not exist: {workspace_path}"));
     }
 
-    if let Some(branch) = branch.filter(|branch| !branch.trim().is_empty()) {
-        validate_branch_name(&branch)?;
+    if let Some(ref branch) = branch.as_ref().filter(|b| !b.trim().is_empty()) {
+        validate_branch_name(branch)?;
         let _ = Command::new("git")
             .args(["checkout", branch.as_str()])
             .current_dir(&workspace)
@@ -80,6 +83,17 @@ pub fn open_in_code(workspace_path: String, branch: Option<String>) -> Result<Co
 
     let state_file = ensure_state_file(&workspace).map_err(|error| error.to_string())?;
     let launched = launch_editor(&workspace, &state_file).map_err(|error| error.to_string())?;
+
+    // Auto-write browser_action event to daily log
+    if let Ok(conn) = rusqlite::Connection::open(&state.paths.database_path) {
+        let now = Utc::now().to_rfc3339();
+        let ev_id = Uuid::new_v4().to_string();
+        let _ = conn.execute(
+            "INSERT INTO raw_events (id, source_type, content, metadata, created_at) VALUES (?1, 'browser_agent', ?2, '{}', ?3)",
+            rusqlite::params![ev_id, format!("Opened in {launched}: {workspace_path}"), now],
+        );
+        let _ = write_daily_log_entry(&conn, &now[..10], "browser_action", &format!("Opened in {launched}"), &workspace_path);
+    }
 
     Ok(CommandResponse {
         ok: true,

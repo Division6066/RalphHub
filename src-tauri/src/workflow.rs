@@ -4,7 +4,10 @@ use chrono::Utc;
 use rusqlite::{params, Connection};
 use tauri::State;
 
+use uuid::Uuid;
+
 use crate::{
+    memory::write_daily_log_entry,
     models::{WorkflowRequest, WorkflowRun},
     state::AppState,
     tool_registry::all_tools,
@@ -86,6 +89,18 @@ pub fn create_workflow_run(
     };
 
     insert_workflow_run(&state, &run)?;
+
+    // Auto-write workflow creation to Memory Spine + Daily Log
+    if let Ok(conn) = Connection::open(&state.paths.database_path) {
+        let ev_id = Uuid::new_v4().to_string();
+        let now_str = run.created_at.clone();
+        let summary = format!("Workflow '{}' created with tools: {}", run.workflow_name, run.tool_ids.join(", "));
+        let _ = conn.execute(
+            "INSERT INTO raw_events (id, source_type, content, metadata, created_at) VALUES (?1, 'workflow', ?2, '{}', ?3)",
+            params![ev_id, summary, now_str],
+        );
+        let _ = write_daily_log_entry(&conn, &run.created_at[..10], "agent_run", &format!("Workflow created: {}", run.workflow_name), &summary);
+    }
 
     Ok(run)
 }
