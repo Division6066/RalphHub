@@ -1,3 +1,4 @@
+mod browser;
 mod commands;
 mod models;
 mod orchestrator;
@@ -12,6 +13,7 @@ use tauri::Manager;
 pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_log::Builder::default().level(log::LevelFilter::Info).build())
+    .plugin(tauri_plugin_opener::init())
     .setup(|app| {
       let salt_path = app
         .path()
@@ -28,18 +30,30 @@ pub fn run() {
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
+      // Core
       commands::ensure_bun,
       commands::get_dashboard_snapshot,
       commands::get_editor_candidates,
       commands::get_secure_store_config,
       commands::list_builtin_tools,
       commands::open_in_code,
+      // Deploy / orchestration
       orchestrator::deploy_to_colab,
       orchestrator::deploy_to_pc,
       orchestrator::inject_keys,
       orchestrator::list_managed_projects,
+      // Workflows
       workflow::create_workflow_run,
       workflow::list_workflow_runs,
+      // Browser agent
+      browser::approve_browser_action,
+      browser::get_browser_settings,
+      browser::get_edge_profile_config,
+      browser::launch_browser_with_profile,
+      browser::list_browser_actions,
+      browser::log_browser_action,
+      browser::open_colab_url,
+      browser::save_browser_settings,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

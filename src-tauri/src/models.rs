@@ -113,6 +113,69 @@ pub struct WorkflowRequest {
     pub model_name: String,
 }
 
+// ── Browser agent ────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BrowserSettings {
+    /// "system" | "edge" | "chrome" | "firefox"
+    pub preferred_browser: String,
+    /// "permission" | "autonomous"
+    pub agent_mode: String,
+}
+
+impl Default for BrowserSettings {
+    fn default() -> Self {
+        Self {
+            preferred_browser: "system".to_string(),
+            agent_mode: "permission".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BrowserAction {
+    pub id: String,
+    /// "launch" | "navigate" | "click" | "type" | "scrape"
+    pub action_type: String,
+    pub target: String,
+    pub url: String,
+    pub details: Option<String>,
+    /// "pending" | "approved" | "denied" | "executed" | "failed"
+    pub status: String,
+    pub screenshot_path: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BrowserActionRequest {
+    pub action_type: String,
+    pub target: String,
+    pub url: String,
+    pub details: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BrowserActionApproval {
+    pub action_id: String,
+    pub approved: bool,
+    pub always_allow_site: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EdgeProfileConfig {
+    pub profile_dir: String,
+    pub binary_path: Option<String>,
+    pub detected: bool,
+}
+
+// ── Workflow runs ─────────────────────────────────────────────────────────────
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowRun {
