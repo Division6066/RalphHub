@@ -67,6 +67,18 @@
 		}
 	];
 
+	type VoiceFullStackResult = {
+		runId: string;
+		prompt: string;
+		researchSummary: string;
+		tasksCreated: string[];
+		memoryEntryId: string;
+		notionUrl: string | null;
+		completedSteps: string[];
+		modelUsed: string;
+		createdAt: string;
+	};
+
 	let tools: ToolManifest[] = [];
 	let selectedTools: string[] = ['perplexica', 'llm-council', 'get-shit-done', 'memory-spine'];
 	let workflowName = 'Overnight Ralph Chain';
@@ -75,6 +87,9 @@
 	let runs: WorkflowRun[] = [];
 	let activePreset = '';
 	let voiceEnabled = false;
+	let voicePrompt = '';
+	let vfsResult: VoiceFullStackResult | null = null;
+	let runningVfs = false;
 
 	const ollamaModels = [
 		'ollama/mistral',
@@ -132,6 +147,35 @@
 		selectedTools = selectedTools.includes(id)
 			? selectedTools.filter((t) => t !== id)
 			: [...selectedTools, id];
+	}
+
+	async function runVoiceFullStack() {
+		if (!voicePrompt.trim()) {
+			workflowStatus = 'Enter a voice prompt first.';
+			return;
+		}
+		if (!isDesktopRuntime()) {
+			workflowStatus = 'Available in desktop runtime.';
+			return;
+		}
+		runningVfs = true;
+		workflowStatus = 'Running Voice + Full Stack workflow...';
+		try {
+			vfsResult = await invokeTauri<VoiceFullStackResult>('run_voice_full_stack', {
+				request: {
+					prompt: voicePrompt,
+					model: modelName,
+					enableVoiceResponse: voiceEnabled,
+					createNotionPage: false,
+					notionApiKey: null
+				}
+			});
+			workflowStatus = `Voice workflow complete: ${vfsResult.completedSteps.length} steps, memory entry ${vfsResult.memoryEntryId}.`;
+		} catch (e) {
+			workflowStatus = e instanceof Error ? e.message : 'Voice workflow failed.';
+		} finally {
+			runningVfs = false;
+		}
 	}
 </script>
 
@@ -202,10 +246,11 @@
 
 			<div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
 				{#each voiceFullStackFlow as step}
-					<div class="rounded-2xl border border-white/8 bg-white/3 p-4">
+					{@const done = vfsResult?.completedSteps?.includes(`step-${step.step}-${step.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`)}
+					<div class="rounded-2xl border border-white/8 bg-white/3 p-4 {done ? 'border-green-400/20 bg-green-500/5' : ''}">
 						<div class="flex items-center gap-3">
-							<div class="flex h-7 w-7 items-center justify-center rounded-full bg-violet-400/15 text-xs font-semibold text-violet-200">
-								{step.step}
+							<div class="flex h-7 w-7 items-center justify-center rounded-full {done ? 'bg-green-400/20' : 'bg-violet-400/15'} text-xs font-semibold {done ? 'text-green-200' : 'text-violet-200'}">
+								{done ? '✓' : step.step}
 							</div>
 							<p class="text-sm font-medium text-white">{step.label}</p>
 						</div>
@@ -213,6 +258,35 @@
 					</div>
 				{/each}
 			</div>
+
+			<!-- Run Voice + Full Stack -->
+			<div class="mt-4 flex gap-3">
+				<input
+					bind:value={voicePrompt}
+					placeholder="Type or voice your research query..."
+					class="flex-1 rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600"
+				/>
+				<button
+					on:click={runVoiceFullStack}
+					disabled={runningVfs || !voicePrompt.trim()}
+					class="rounded-full bg-gradient-to-r from-cyan-500/20 to-violet-500/20 px-5 py-3 text-sm font-semibold text-white hover:from-cyan-500/30 hover:to-violet-500/30 disabled:opacity-60"
+				>
+					{runningVfs ? 'Running...' : 'Run workflow'}
+				</button>
+			</div>
+
+			<!-- VFS Result -->
+			{#if vfsResult}
+				<div class="mt-4 rounded-2xl border border-green-400/20 bg-green-500/8 p-4 space-y-3">
+					<p class="text-sm font-semibold text-green-200">Workflow complete — {vfsResult.completedSteps.length} steps</p>
+					<p class="text-xs text-slate-400 leading-5">{vfsResult.researchSummary.slice(0, 300)}...</p>
+					<div class="flex gap-4 text-xs text-slate-500">
+						<span>Memory: {vfsResult.memoryEntryId}</span>
+						<span>Tasks: {vfsResult.tasksCreated.length}</span>
+						<span>Model: {vfsResult.modelUsed}</span>
+					</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 

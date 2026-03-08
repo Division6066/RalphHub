@@ -9,6 +9,7 @@ mod state;
 mod tool_registry;
 mod voice;
 mod workflow;
+mod workflow_runner;
 
 use state::AppState;
 use tauri::Manager;
@@ -84,6 +85,10 @@ pub fn run() {
       browser_agent::launch_browser_with_profile,
       browser_agent::get_mcp_connection_instructions,
       browser_agent::check_mcp_server_status,
+      // Workflow runner
+      workflow_runner::run_voice_full_stack,
+      workflow_runner::transcribe_audio_file,
+      workflow_runner::speak_text,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
