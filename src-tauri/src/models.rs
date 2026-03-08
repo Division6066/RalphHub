@@ -126,6 +126,8 @@ pub struct DashboardSnapshot {
     pub managed_project_count: i64,
     pub workflow_run_count: i64,
     pub overnight_loop_count: i64,
+    pub memory_entry_count: i64,
+    pub kaizen_task_count: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

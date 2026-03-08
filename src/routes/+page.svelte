@@ -7,6 +7,8 @@
 		managedProjectCount: number;
 		workflowRunCount: number;
 		overnightLoopCount: number;
+		memoryEntryCount: number;
+		kaizenTaskCount: number;
 	};
 
 	type ManagedProject = {
@@ -26,7 +28,9 @@
 	$: quickStats = [
 		{ label: 'Managed projects', value: String(snapshot?.managedProjectCount ?? 0), detail: 'Tracked in SQLite' },
 		{ label: 'Package manager', value: snapshot?.bun.installed ? `Bun ${snapshot?.bun.version ?? ''}`.trim() : 'Missing', detail: 'No npm fallback' },
-		{ label: 'Workflow runs', value: String(snapshot?.workflowRunCount ?? 0), detail: 'Prepared overnight chains' }
+		{ label: 'Workflow runs', value: String(snapshot?.workflowRunCount ?? 0), detail: 'Prepared overnight chains' },
+		{ label: 'Memory entries', value: String(snapshot?.memoryEntryCount ?? 0), detail: 'Auto-written by tools' },
+		{ label: 'Kaizen tasks', value: String(snapshot?.kaizenTaskCount ?? 0), detail: 'Continuous improvement' }
 	];
 
 	const milestones = [
@@ -76,27 +80,30 @@
 		</div>
 
 		<div class="mt-8 flex flex-wrap gap-3">
-			<a
-				href="/deploy"
-				class="rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/30"
-			>
-				Start a deploy
+			<a href="/deploy" class="rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/30">
+				Deploy a tool
 			</a>
-			<a
-				href="/workflows"
-				class="rounded-full border border-white/12 bg-white/5 px-5 py-3 text-sm font-semibold text-white"
-			>
-				Compose a workflow
+			<a href="/workflows" class="rounded-full border border-white/12 bg-white/5 px-5 py-3 text-sm font-semibold text-white">
+				Compose workflow
+			</a>
+			<a href="/ollama" class="rounded-full border border-violet-400/30 bg-violet-500/10 px-5 py-3 text-sm font-semibold text-violet-200">
+				Ollama models
+			</a>
+			<a href="/voice" class="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-5 py-3 text-sm font-semibold text-cyan-200">
+				Voice mode
+			</a>
+			<a href="/browser-agent" class="rounded-full border border-white/12 bg-white/5 px-5 py-3 text-sm font-semibold text-white">
+				Browser Agent
 			</a>
 		</div>
 	</div>
 
-	<div class="grid gap-4 xl:grid-cols-3">
+	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
 		{#each quickStats as stat}
 			<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-				<p class="text-sm text-slate-400">{stat.label}</p>
+				<p class="text-xs text-slate-400">{stat.label}</p>
 				<p class="mt-3 text-2xl font-semibold text-white">{stat.value}</p>
-				<p class="mt-2 text-sm text-slate-500">{stat.detail}</p>
+				<p class="mt-2 text-xs text-slate-500">{stat.detail}</p>
 			</div>
 		{/each}
 	</div>

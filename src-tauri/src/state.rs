@@ -55,6 +55,8 @@ impl AppState {
         let managed_project_count = query_count(&connection, CountTable::ManagedProjects)?;
         let workflow_run_count = query_count(&connection, CountTable::WorkflowRuns)?;
         let overnight_loop_count = query_count(&connection, CountTable::OvernightLoops)?;
+        let memory_entry_count = query_count(&connection, CountTable::MemoryEntries)?;
+        let kaizen_task_count = query_count(&connection, CountTable::KaizenTasks)?;
 
         Ok(DashboardSnapshot {
             bun: detect_bun_status(),
@@ -63,6 +65,8 @@ impl AppState {
             managed_project_count,
             workflow_run_count,
             overnight_loop_count,
+            memory_entry_count,
+            kaizen_task_count,
         })
     }
 }
@@ -227,6 +231,8 @@ enum CountTable {
     ManagedProjects,
     WorkflowRuns,
     OvernightLoops,
+    MemoryEntries,
+    KaizenTasks,
 }
 
 fn query_count(connection: &Connection, table: CountTable) -> Result<i64> {
@@ -234,6 +240,8 @@ fn query_count(connection: &Connection, table: CountTable) -> Result<i64> {
         CountTable::ManagedProjects => "SELECT COUNT(*) FROM managed_projects",
         CountTable::WorkflowRuns => "SELECT COUNT(*) FROM workflow_runs",
         CountTable::OvernightLoops => "SELECT COUNT(*) FROM overnight_loops",
+        CountTable::MemoryEntries => "SELECT COUNT(*) FROM memory_entries",
+        CountTable::KaizenTasks => "SELECT COUNT(*) FROM kaizen_tasks",
     };
     let count = connection.query_row(sql, [], |row| row.get(0))?;
     Ok(count)
