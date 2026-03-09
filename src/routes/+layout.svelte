@@ -12,7 +12,8 @@
 		{ href: '/workflows', label: 'Workflows', icon: '⚡', emoji: true },
 		{ href: '/deploy', label: 'Deploy', icon: '🚀', emoji: true },
 		{ href: '/settings', label: 'API Keys', icon: '🔑', emoji: true },
-		{ href: '/voice', label: 'Voice', icon: '🎙️', emoji: true }
+		{ href: '/voice', label: 'Voice', icon: '🎙️', emoji: true },
+		{ href: '/mobile', label: 'Mobile', icon: '📱', emoji: true }
 	];
 
 	let { children } = $props();

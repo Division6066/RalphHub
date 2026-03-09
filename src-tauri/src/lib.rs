@@ -1,6 +1,7 @@
 mod commands;
 mod kaizen;
 mod memory;
+mod mobile_sync;
 mod models;
 mod orchestrator;
 mod state;
@@ -65,6 +66,9 @@ pub fn run() {
             memory::search_memory,
             memory::delete_memory_entry,
             memory::update_memory_entry,
+            // ── Mobile Sync
+            mobile_sync::get_mobile_sync_status,
+            mobile_sync::enable_mobile_sync,
         ])
         .run(tauri::generate_context!())
         .expect("error while running AmitOS");
