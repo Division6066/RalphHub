@@ -4,6 +4,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import '../app.css';
 	import ModelSwitcher from '$lib/components/ModelSwitcher.svelte';
+	import VyPandaStatus from '$lib/components/VyPandaStatus.svelte';
 	import { loadProviders, enabledProvidersStore, activeModelStore, memoryStatsStore } from '$lib/utils/provider-registry';
 
 	const navigation = [
@@ -79,6 +80,9 @@
 						Memory: {$memoryStatsStore.totalEntries} entries · ${$memoryStatsStore.totalCostUsd.toFixed(4)} spent
 					</p>
 				{/if}
+			</div>
+			<div class="mt-4">
+				<VyPandaStatus />
 			</div>
 		</aside>
 
