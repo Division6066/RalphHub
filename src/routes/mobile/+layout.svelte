@@ -10,7 +10,7 @@
 		{ id: 'capture', href: '/mobile/capture', label: 'Capture', icon: '＋' },
 		{ id: 'approvals', href: '/mobile/approvals', label: 'Queue', icon: '◎' },
 		{ id: 'agents', href: '/mobile/agents', label: 'Agents', icon: '◈' },
-		{ id: 'digest', href: '/mobile/digest', label: 'Digest', icon: '◉' },
+		{ id: 'settings', href: '/mobile/settings', label: 'Setup', icon: '⚙' },
 	];
 
 	let currentPath = $derived(page.url.pathname);
