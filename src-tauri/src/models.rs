@@ -87,25 +87,73 @@ pub struct LogApiUsageRequest {
 pub struct KaizenTask {
     pub id: String,
     pub title: String,
-    pub description: String,
+    pub description: Option<String>,
+    pub domain: String,
     pub status: String,
-    pub priority: String,
-    pub source: String,
-    pub provider_id: String,
-    pub usage_log_id: String,
+    pub is_today: bool,
+    pub is_minimum_version: bool,
+    pub priority: i32,
+    pub parent_id: Option<String>,
+    pub subtasks: Vec<String>,
+    pub energy: String,
+    pub estimated_minutes: Option<i32>,
+    pub tags: Vec<String>,
+    pub due_date: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+    // Legacy fields for backward compat
+    pub source: Option<String>,
+    pub provider_id: Option<String>,
+    pub usage_log_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateKaizenTaskRequest {
     pub title: String,
+    pub description: Option<String>,
+    pub domain: Option<String>,
+    pub is_today: Option<bool>,
+    pub is_minimum_version: Option<bool>,
+    pub priority: Option<i32>,
+    pub parent_id: Option<String>,
+    pub energy: Option<String>,
+    pub estimated_minutes: Option<i32>,
+    pub tags: Option<Vec<String>>,
+    pub due_date: Option<String>,
+    // Legacy fields
+    pub source: Option<String>,
+    pub provider_id: Option<String>,
+    pub usage_log_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateKaizenTaskRequest {
+    pub id: String,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub domain: Option<String>,
+    pub status: Option<String>,
+    pub is_today: Option<bool>,
+    pub is_minimum_version: Option<bool>,
+    pub priority: Option<i32>,
+    pub energy: Option<String>,
+    pub estimated_minutes: Option<i32>,
+    pub tags: Option<Vec<String>>,
+    pub due_date: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KaizenDomain {
+    pub id: String,
+    pub name: String,
+    pub color: String,
+    pub icon: String,
     pub description: String,
-    pub priority: String,
-    pub source: String,
-    pub provider_id: String,
-    pub usage_log_id: String,
+    pub task_count: i64,
+    pub today_count: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -145,6 +193,80 @@ pub struct ToolManifest {
     pub open_in_code: bool,
     pub needs_sandbox: bool,
     pub required_keys: Vec<String>,
+    pub category: String,
+    pub parallel_capable: bool,
+    pub install_method: String,
+    pub tags: Vec<String>,
+}
+
+// ─── Process Manager Models ───────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolProcessStatus {
+    pub tool_id: String,
+    pub name: String,
+    pub status: String,
+    pub pid: Option<u32>,
+    pub started_at: Option<String>,
+    pub log_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LaunchBackgroundRequest {
+    pub tool_id: String,
+    pub workspace_path: String,
+    pub env_entries: Vec<EnvEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParallelToolConfig {
+    pub tool_id: String,
+    pub workspace_path: String,
+    pub env_entries: Vec<EnvEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParallelWorkflowRequest {
+    pub workflow_name: String,
+    pub tool_configs: Vec<ParallelToolConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParallelWorkflowResult {
+    pub workflow_id: String,
+    pub workflow_name: String,
+    pub statuses: Vec<ToolProcessStatus>,
+    pub memory_spine_id: String,
+    pub kaizen_task_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolLogsResult {
+    pub tool_id: String,
+    pub log_path: String,
+    pub lines: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceCommandRequest {
+    pub transcript: String,
+    pub source: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceCommandResult {
+    pub action: String,
+    pub tool_id: Option<String>,
+    pub message: String,
+    pub success: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

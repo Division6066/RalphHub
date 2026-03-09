@@ -9,11 +9,13 @@ use rusqlite::{params, Connection};
 use tauri::{AppHandle, Manager};
 
 use crate::models::{BunStatus, DashboardSnapshot, WorkspacePaths};
+use crate::process_manager::{new_registry, ProcessRegistry};
 use crate::tool_registry::all_tools;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub paths: RalphPaths,
+    pub process_registry: ProcessRegistry,
 }
 
 #[derive(Debug, Clone)]
@@ -47,7 +49,10 @@ impl AppState {
         paths.ensure_directories()?;
         initialize_database(&paths.database_path)?;
 
-        Ok(Self { paths })
+        Ok(Self {
+            paths,
+            process_registry: new_registry(),
+        })
     }
 
     pub fn snapshot(&self) -> Result<DashboardSnapshot> {
@@ -199,15 +204,41 @@ fn initialize_database(path: &Path) -> Result<()> {
         CREATE TABLE IF NOT EXISTS kaizen_tasks (
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
-            description TEXT NOT NULL DEFAULT '',
+            description TEXT DEFAULT NULL,
+            domain TEXT NOT NULL DEFAULT 'general',
             status TEXT NOT NULL DEFAULT 'todo',
-            priority TEXT NOT NULL DEFAULT 'normal',
+            is_today INTEGER NOT NULL DEFAULT 0,
+            is_minimum_version INTEGER NOT NULL DEFAULT 0,
+            priority INTEGER NOT NULL DEFAULT 3,
+            parent_id TEXT DEFAULT NULL,
+            subtasks TEXT NOT NULL DEFAULT '[]',
+            energy TEXT NOT NULL DEFAULT 'medium',
+            estimated_minutes INTEGER DEFAULT NULL,
+            tags TEXT NOT NULL DEFAULT '[]',
+            due_date TEXT DEFAULT NULL,
             source TEXT NOT NULL DEFAULT '',
             provider_id TEXT NOT NULL DEFAULT '',
             usage_log_id TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS kaizen_domains (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            color TEXT NOT NULL DEFAULT '#6366f1',
+            icon TEXT NOT NULL DEFAULT '📁',
+            description TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+
+        INSERT OR IGNORE INTO kaizen_domains (id, name, color, icon, description, created_at)
+        VALUES
+            ('general', 'General', '#6366f1', '📋', 'General tasks', datetime('now')),
+            ('coding', 'Coding', '#06b6d4', '💻', 'Development tasks', datetime('now')),
+            ('research', 'Research', '#8b5cf6', '🔬', 'Research and learning', datetime('now')),
+            ('writing', 'Writing', '#10b981', '✍️', 'Writing and documentation', datetime('now')),
+            ('health', 'Health', '#ef4444', '❤️', 'Health and wellness', datetime('now'));
 
         CREATE TABLE IF NOT EXISTS memory_spine (
             id TEXT PRIMARY KEY,
@@ -217,6 +248,18 @@ fn initialize_database(path: &Path) -> Result<()> {
             provider_id TEXT NOT NULL DEFAULT '',
             model TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS parallel_workflows (
+            id TEXT PRIMARY KEY,
+            workflow_name TEXT NOT NULL,
+            tool_ids TEXT NOT NULL DEFAULT '[]',
+            statuses TEXT NOT NULL DEFAULT '[]',
+            memory_spine_id TEXT NOT NULL DEFAULT '',
+            kaizen_task_id TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'running',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
         );
         ",
     )?;
@@ -229,7 +272,7 @@ fn initialize_database(path: &Path) -> Result<()> {
          )",
         params![
             "bootstrap",
-            "Initialized RalphHub state database",
+            "Initialized AmitOS state database",
             Option::<String>::None,
             chrono::Utc::now().to_rfc3339()
         ],

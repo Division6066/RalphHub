@@ -5,15 +5,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
-## [1.0.0] — 2026-03-09 🎉 Grand Finale — Fully Optimized, Debugged, and Ready to Ship
+## [1.0.0] — 2026-03-09 🎉 Grand Finale — Fully Optimized, Debugged, Beautiful, and Ready to Ship
 
-### Grand Finale Changes
-- **Merged all branches** cleanly: amitos-final-polish, amitos-layer-foundation, browser-agent, mobile-companion, new-tools, wishlist-local-models
-- **New routes added**: Kaizen Tasks, Memory Spine, MCP Browser, Mobile Sync, Panda Phone Control
-- **Design system overhaul**: AmitOS CSS design tokens, ADHD-friendly typography, neon dark theme, smooth animations, big touch targets
-- **Layout redesign**: Icon + badge navigation, violet/cyan gradient sidebar, model switcher, memory stats
-- **CI/CD**: Fixed test job (no test runner referenced), all build targets validated
-- **README**: Full rewrite with one-click install, voice demo, architecture diagram
+### Grand Finale (Milestone 1-7) Changes
+- **Merged all branches** cleanly: amitos-final-polish, amitos-layer-foundation, browser-agent, mobile-companion, new-tools, vy-panda-voice, universal-api
+- **New routes added**: Today Board (`/today`), Vy Agent (`/vy`), Parallel Run (`/parallel`)
+- **Rich Kaizen schema**: Added `domain`, `is_today`, `energy`, `estimated_minutes`, `tags`, `subtasks`, `parent_id` fields + `kaizen_domains` table with seeds
+- **Process Manager**: New `process_manager.rs` — background tool launch, logs streaming, stop/pause
+- **Parallel workflow engine**: Run superpowers + diffusionstudio-agent simultaneously, with Memory Spine + Kaizen auto-logging
+- **Voice command handler**: `handle_voice_command` — intent-based routing for parallel, stop, status, superpowers, video
+- **New Tauri commands**: `launch_tool_background`, `run_parallel_workflow`, `list_running_tools`, `handle_voice_command`, `list_kaizen_tasks`, `create_kaizen_task`, `update_kaizen_task`, `list_kaizen_domains`
+- **Tool registry upgrade**: Superpowers (obra/superpowers) + Diffusionstudio/agent added with `category`, `parallel_capable`, `install_method`, `tags` fields
+- **CSS design system v2**: Neon tokens, skeleton shimmer, progress bars, feature-card hover lift, dyslexia-friendly line heights, mobile grid breakpoints
+- **Dashboard update**: Today Board, Parallel Run, Vy Agent featured cards on homepage
+- **Mobile nav**: Shows 8 top icons, proper 36×36 touch targets
+- **Tests**: 59/59 E2E tests passing — covers all new routes, Rust commands, schemas, and Grand Finale simulation flows
+- **README**: Updated voice demo to include parallel workflow and voice command examples
 
 ---
 

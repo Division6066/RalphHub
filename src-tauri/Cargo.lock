@@ -91,6 +91,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
+name = "amitos"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "git2",
+ "log",
+ "once_cell",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-log",
+ "tauri-plugin-stronghold",
+ "uuid",
+]
+
+[[package]]
 name = "android_log-sys"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3273,25 +3292,6 @@ name = "radium"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
-
-[[package]]
-name = "ralphhub"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "git2",
- "log",
- "once_cell",
- "rusqlite",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-log",
- "tauri-plugin-stronghold",
- "uuid",
-]
 
 [[package]]
 name = "rand"

@@ -8,16 +8,18 @@
 
 	const navigation = [
 		{ href: '/', label: 'Dashboard', icon: '⬡', badge: '' },
-		{ href: '/kaizen', label: 'Kaizen Tasks', icon: '♾️', badge: 'NEW' },
+		{ href: '/today', label: 'Today Board', icon: '📅', badge: 'NEW' },
+		{ href: '/kaizen', label: 'Kaizen Tasks', icon: '♾️', badge: '' },
 		{ href: '/memory', label: 'Memory Spine', icon: '🧠', badge: '' },
-		{ href: '/computer-control', label: 'Vy Agent', icon: '🖥️', badge: 'AI' },
+		{ href: '/vy', label: 'Vy Agent', icon: '🖥️', badge: 'AI' },
 		{ href: '/panda', label: 'Panda Phone', icon: '🐼', badge: 'PHONE' },
+		{ href: '/parallel', label: 'Parallel Run', icon: '⚡', badge: 'NEW' },
 		{ href: '/voice', label: 'Voice + Chat', icon: '🎙️', badge: '' },
 		{ href: '/remote-nodes', label: 'VPS + RPi', icon: '☁️', badge: '' },
 		{ href: '/mcp', label: 'MCP Browser', icon: '🔌', badge: '' },
 		{ href: '/mobile', label: 'Mobile Sync', icon: '📱', badge: '' },
 		{ href: '/tools', label: 'Tools', icon: '🛠️', badge: '' },
-		{ href: '/workflows', label: 'Workflows', icon: '⚡', badge: '' },
+		{ href: '/workflows', label: 'Workflows', icon: '🔄', badge: '' },
 		{ href: '/deploy', label: 'Deploy', icon: '🚀', badge: '' },
 		{ href: '/settings', label: 'API Keys', icon: '🔑', badge: '' },
 	];
@@ -112,19 +114,20 @@
 		</aside>
 
 		<!-- Mobile top bar -->
-		<div class="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-white/8 bg-slate-950/95 px-4 py-3 backdrop-blur-xl lg:hidden">
-			<div class="flex items-center gap-2">
+		<div class="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-white/8 bg-slate-950/97 px-3 py-2 backdrop-blur-xl lg:hidden">
+			<div class="flex items-center gap-2 shrink-0">
 				<div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 text-xs font-bold text-white shadow-md">A</div>
 				<span class="text-sm font-bold text-white">AmitOS</span>
 			</div>
-			<div class="flex gap-0.5 overflow-x-auto">
-				{#each navigation.slice(0, 7) as item}
+			<div class="flex gap-0.5 overflow-x-auto ml-2">
+				{#each navigation.slice(0, 8) as item}
 					<a
 						href={item.href}
-						class={`rounded-lg px-2 py-1.5 text-base transition-all touch-target ${
+						class={`rounded-lg px-2 py-1.5 text-base transition-all ${
 							isActive(item.href) ? 'bg-violet-500/25 text-violet-100' : 'text-slate-400 hover:text-white active:scale-95'
 						}`}
 						title={item.label}
+						style="min-width: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center;"
 					>
 						{item.icon}
 					</a>
