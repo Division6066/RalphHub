@@ -1,17 +1,17 @@
 [package]
-name = "ralphhub"
-version = "0.1.0"
-description = "RalphHub desktop orchestrator"
-authors = ["OpenAI"]
+name = "amitos"
+version = "1.0.0"
+description = "AmitOS — Universal AI OS. Deploy, research, remember, and control every device from one surface."
+authors = []
 license = "MIT"
-repository = ""
+repository = "https://github.com/your-org/amitos"
 edition = "2021"
 rust-version = "1.77.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "ralphhub_lib"
+name = "amitos_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

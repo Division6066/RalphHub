@@ -35,7 +35,7 @@ impl AppState {
             .context("failed to resolve app data directory")?;
 
         let paths = RalphPaths {
-            database_path: app_data_dir.join("ralphhub.db"),
+            database_path: app_data_dir.join("amitos.db"),
             repos_dir: app_data_dir.join("repos"),
             logs_dir: app_data_dir.join("logs"),
             workflows_dir: app_data_dir.join("workflows"),

@@ -112,11 +112,11 @@ pub fn get_secure_store_config(state: State<'_, AppState>) -> Result<SecureStore
         vault_path: state
             .paths
             .app_data_dir
-            .join("ralphhub.vault.hold")
+            .join("amitos.vault.hold")
             .display()
             .to_string(),
-        client_name: "ralphhub-keys".to_string(),
-        vault_password: format!("ralphhub::{machine}::{username}::stronghold"),
+        client_name: "amitos-keys".to_string(),
+        vault_password: format!("amitos::{machine}::{username}::stronghold"),
     })
 }
 

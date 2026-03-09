@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "RalphHub",
-  "version": "0.1.0",
-  "identifier": "com.ralphhub.desktop",
+  "productName": "AmitOS",
+  "version": "1.0.0",
+  "identifier": "com.amitos.desktop",
   "build": {
     "frontendDist": "../build",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "RalphHub",
+        "title": "AmitOS — Universal AI OS",
         "width": 1440,
         "height": 960,
         "resizable": true,

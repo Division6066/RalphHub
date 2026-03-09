@@ -97,6 +97,30 @@ describe('Documentation', () => {
   });
 });
 
+// ─── Rebranding ─────────────────────────────────────────────────────────────
+
+describe('AmitOS Branding', () => {
+  it('tauri.conf.json uses AmitOS branding', async () => {
+    const f = Bun.file('src-tauri/tauri.conf.json');
+    const content = await f.text();
+    expect(content).toContain('AmitOS');
+    expect(content).toContain('1.0.0');
+  });
+
+  it('Cargo.toml uses amitos package name', async () => {
+    const f = Bun.file('src-tauri/Cargo.toml');
+    const content = await f.text();
+    expect(content).toContain('name = "amitos"');
+    expect(content).toContain('1.0.0');
+  });
+
+  it('page title is AmitOS', async () => {
+    const f = Bun.file('src/routes/+layout.svelte');
+    const content = await f.text();
+    expect(content).toContain('AmitOS');
+  });
+});
+
 // ─── Build artifacts ──────────────────────────────────────────────────────────
 
 describe('Build', () => {
