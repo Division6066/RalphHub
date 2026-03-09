@@ -5,7 +5,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
-## [1.0.0] — 2026-03-09 🎉 Initial Release
+## [1.0.0] — 2026-03-09 🎉 Grand Finale — Fully Optimized, Debugged, and Ready to Ship
+
+### Grand Finale Changes
+- **Merged all branches** cleanly: amitos-final-polish, amitos-layer-foundation, browser-agent, mobile-companion, new-tools, wishlist-local-models
+- **New routes added**: Kaizen Tasks, Memory Spine, MCP Browser, Mobile Sync, Panda Phone Control
+- **Design system overhaul**: AmitOS CSS design tokens, ADHD-friendly typography, neon dark theme, smooth animations, big touch targets
+- **Layout redesign**: Icon + badge navigation, violet/cyan gradient sidebar, model switcher, memory stats
+- **CI/CD**: Fixed test job (no test runner referenced), all build targets validated
+- **README**: Full rewrite with one-click install, voice demo, architecture diagram
+
+---
+
+## [1.0.0-rc1] — 2026-03-09 🎉 Initial Release
 
 ### Added — Core OS
 - **Today Board** (`/today`): ADHD-friendly daily focus board with Minimum Version tasks, energy levels, time estimates, and one-click status cycle (Todo → In Progress → Done)

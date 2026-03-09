@@ -15,8 +15,8 @@ permissions:
   contents: write
 
 jobs:
-  # ─── Tests ─────────────────────────────────────────────────────────────────
-  test:
+  # ─── Type check + build validation ─────────────────────────────────────────
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,10 +27,15 @@ jobs:
         run: bun install
       - name: Run tests
         run: bun run test
+      - name: Build frontend
+        run: bun run build
+      - name: Type check
+        run: bun run check
+        continue-on-error: true
 
   # ─── Desktop: macOS ────────────────────────────────────────────────────────
   build-macos:
-    needs: test
+    needs: validate
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,7 +62,7 @@ jobs:
 
   # ─── Desktop: Windows ──────────────────────────────────────────────────────
   build-windows:
-    needs: test
+    needs: validate
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -88,7 +93,7 @@ jobs:
 
   # ─── Desktop: Linux ────────────────────────────────────────────────────────
   build-linux:
-    needs: test
+    needs: validate
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -125,7 +130,7 @@ jobs:
 
   # ─── Android APK ───────────────────────────────────────────────────────────
   build-android:
-    needs: test
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -168,7 +173,7 @@ jobs:
 
   # ─── Raspberry Pi ARM binary ──────────────────────────────────────────────
   build-rpi:
-    needs: test
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

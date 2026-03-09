@@ -10,6 +10,7 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test": "bun test tests/",
 		"tauri": "tauri",
 		"tauri:dev": "bun run tauri dev",
 		"tauri:build": "bun run tauri build"
