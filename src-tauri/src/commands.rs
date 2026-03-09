@@ -62,7 +62,7 @@ pub fn ensure_bun() -> Result<CommandResponse, String> {
         })
     } else {
         Err(format!(
-            "Bun installation failed. Run {} manually and restart RalphHub.",
+            "Bun installation failed. Run {} manually and restart AmitOS.",
             bun_installer_hint()
         ))
     }
@@ -108,11 +108,11 @@ pub fn get_secure_store_config(state: State<'_, AppState>) -> Result<SecureStore
         vault_path: state
             .paths
             .app_data_dir
-            .join("ralphhub.vault.hold")
+            .join("amitos.vault.hold")
             .display()
             .to_string(),
-        client_name: "ralphhub-keys".to_string(),
-        vault_password: format!("ralphhub::{machine}::{username}::stronghold"),
+        client_name: "amitos-keys".to_string(),
+        vault_password: format!("amitos::{machine}::{username}::stronghold"),
     })
 }
 
@@ -121,7 +121,7 @@ fn ensure_state_file(workspace: &Path) -> Result<PathBuf, String> {
     if !path.exists() {
         fs::write(
             &path,
-            "# RalphHub State\n\n- Status: initialized\n- Next step: update this file from the active workflow.\n",
+            "# AmitOS State\n\n- Status: initialized\n- Next step: update this file from the active workflow.\n",
         )
         .map_err(|error| error.to_string())?;
     }
