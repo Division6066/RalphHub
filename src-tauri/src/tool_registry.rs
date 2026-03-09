@@ -85,6 +85,52 @@ pub static BUILTIN_TOOLS: Lazy<Vec<ToolManifest>> = Lazy::new(|| {
             vec!["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "GROK_API_KEY"],
             false,
         ),
+        // ── Computer Control Tools (Vy-style) ─────────────────────────────────
+        tool(
+            "computer-agent",
+            "Computer Agent (Desktop)",
+            "https://github.com/suitedaces/computer-agent",
+            "Vy-style vision loop: screenshot → LLM analysis → mouse/keyboard action. Runs in background while you work.",
+            "internal://computer-control",
+            vec!["ANTHROPIC_API_KEY", "OPENAI_API_KEY"],
+            false,
+        ),
+        tool(
+            "agent-s",
+            "Agent-S (simular-ai)",
+            "https://github.com/simular-ai/Agent-S",
+            "Multi-step GUI agent with hierarchical planning and OS-level control.",
+            "internal://computer-control",
+            vec!["OPENAI_API_KEY"],
+            true,
+        ),
+        tool(
+            "cua",
+            "CUA Vision Loop (trycua)",
+            "https://github.com/trycua/cua",
+            "Computer-Use Agent: lightweight screenshot-based tool-use loop with sandboxing.",
+            "internal://computer-control",
+            vec!["ANTHROPIC_API_KEY"],
+            true,
+        ),
+        tool(
+            "android-panda",
+            "Android Panda (blurr)",
+            "https://github.com/Ayush0Chaudhary/blurr",
+            "Android Accessibility Service agent — full control over any app on your Android device.",
+            "internal://computer-control/android",
+            Vec::new(),
+            false,
+        ),
+        tool(
+            "tutorial-excel-workflow",
+            "Tutorial + Excel Parallel Workflow",
+            "internal://computer-control/workflows",
+            "Example: Watch YouTube tutorial in foreground while agent does taxes in Excel + updates Notion in background.",
+            "internal://computer-control",
+            vec!["OPENAI_API_KEY"],
+            false,
+        ),
     ]
 });
 

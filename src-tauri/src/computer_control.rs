@@ -15,7 +15,7 @@ use std::{
 };
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
-use serde_json::Value;
+use serde_json;
 use tauri::State;
 use uuid::Uuid;
 
@@ -498,7 +498,8 @@ fn run_shell_command(cmd: &str) -> Result<String, String> {
 
 /// Represents a single step in the agent vision loop.
 /// The agent: (1) takes screenshot, (2) analyses with LLM, (3) decides next action.
-fn vision_loop_step(task: &AgentTask) -> (String, Option<ComputerAction>) {
+#[allow(dead_code)]
+pub fn vision_loop_step(task: &AgentTask) -> (String, Option<ComputerAction>) {
     // In a full implementation, this would:
     // 1. Call the configured LLM provider with the screenshot
     // 2. Parse the response to extract the next action
