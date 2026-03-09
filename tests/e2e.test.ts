@@ -265,3 +265,163 @@ describe('Workflow Chain Composer', () => {
 		expect(errors.some((e) => e.includes('tool'))).toBe(true);
 	});
 });
+
+// ─── Vy Desktop Agent Tests ───────────────────────────────────────────────────
+
+describe('Vy Desktop Agent', () => {
+	type VySession = {
+		id: string;
+		goal: string;
+		status: 'idle' | 'watching' | 'controlling' | 'reviewing' | 'done';
+		permissionGranted: boolean;
+		log: string[];
+	};
+
+	let sessionCounter = 0;
+	function createVySession(goal: string, permissionGranted: boolean): VySession {
+		if (!permissionGranted) throw new Error('Permission required to start Vy session');
+		return {
+			id: `vy-${Date.now()}-${++sessionCounter}`,
+			goal,
+			status: 'watching',
+			permissionGranted: true,
+			log: [`Goal: "${goal}"`, 'Vy observing screen...']
+		};
+	}
+
+	function parseVoiceGoal(utterance: string): { action: string; target: string } | null {
+		const match = utterance.match(/^(open|navigate to|go to|show)\s+(.+)$/i);
+		if (!match) return null;
+		return { action: match[1].toLowerCase(), target: match[2].toLowerCase() };
+	}
+
+	it('requires permission before starting', () => {
+		expect(() => createVySession('Set up dev environment', false)).toThrow('Permission required');
+	});
+
+	it('creates a valid session with permission', () => {
+		const session = createVySession('Research pricing page', true);
+		expect(session.goal).toBe('Research pricing page');
+		expect(session.status).toBe('watching');
+		expect(session.log.length).toBeGreaterThan(0);
+	});
+
+	it('parses navigation voice commands', () => {
+		const cmd = parseVoiceGoal('open today board');
+		expect(cmd?.action).toBe('open');
+		expect(cmd?.target).toBe('today board');
+	});
+
+	it('returns null for unrecognised voice commands', () => {
+		const cmd = parseVoiceGoal('what is the capital of France');
+		expect(cmd).toBeNull();
+	});
+
+	it('session ID is unique', () => {
+		const s1 = createVySession('Task A', true);
+		const s2 = createVySession('Task B', true);
+		expect(s1.id).not.toBe(s2.id);
+	});
+});
+
+// ─── Panda Phone Control Tests ────────────────────────────────────────────────
+
+describe('Panda Phone Control', () => {
+	type PendingAction = {
+		id: string;
+		type: 'desktop-action' | 'voice-capture' | 'task-add';
+		description: string;
+		approved: boolean | null;
+	};
+
+	function processApproval(actions: PendingAction[], id: string, approve: boolean): PendingAction[] {
+		return actions.map(a => a.id === id ? { ...a, approved: approve } : a);
+	}
+
+	function parseVoiceCapture(utterance: string): { type: 'memory' | 'task' | 'note'; content: string } {
+		if (utterance.match(/^remember\s+/i)) return { type: 'memory', content: utterance.replace(/^remember\s+/i, '') };
+		if (utterance.match(/^(add task|task to do)\s+/i)) return { type: 'task', content: utterance.replace(/^(add task|task to do)\s+/i, '') };
+		return { type: 'note', content: utterance };
+	}
+
+	const mockActions: PendingAction[] = [
+		{ id: 'a1', type: 'desktop-action', description: 'Open Terminal', approved: null },
+		{ id: 'a2', type: 'voice-capture', description: 'Save memo', approved: null },
+	];
+
+	it('approves a pending action', () => {
+		const updated = processApproval(mockActions, 'a1', true);
+		const action = updated.find(a => a.id === 'a1');
+		expect(action?.approved).toBe(true);
+	});
+
+	it('rejects a pending action', () => {
+		const updated = processApproval(mockActions, 'a2', false);
+		const action = updated.find(a => a.id === 'a2');
+		expect(action?.approved).toBe(false);
+	});
+
+	it('does not affect other actions when approving one', () => {
+		const updated = processApproval(mockActions, 'a1', true);
+		const a2 = updated.find(a => a.id === 'a2');
+		expect(a2?.approved).toBeNull();
+	});
+
+	it('classifies voice captures correctly', () => {
+		expect(parseVoiceCapture('remember to call mom tomorrow').type).toBe('memory');
+		expect(parseVoiceCapture('add task write test suite').type).toBe('task');
+		expect(parseVoiceCapture('this is a general note').type).toBe('note');
+	});
+
+	it('extracts content from voice captures', () => {
+		const result = parseVoiceCapture('remember to review PR by Friday');
+		expect(result.content).toBe('to review PR by Friday');
+	});
+});
+
+// ─── VPS / RPi Sync Tests ─────────────────────────────────────────────────────
+
+describe('VPS / RPi Sync', () => {
+	type SyncTarget = {
+		id: string;
+		type: 'vps' | 'rpi' | 'local';
+		host: string;
+		port: number;
+		syncEnabled: boolean;
+	};
+
+	function buildSshCommand(target: SyncTarget): string {
+		if (target.type === 'local') throw new Error('Cannot SSH to local target');
+		return `ssh -p ${target.port} amitos@${target.host} 'systemctl status amitos-sync'`;
+	}
+
+	function buildRsyncCommand(target: SyncTarget, localPath: string): string {
+		return `rsync -avz ${localPath} amitos@${target.host}:/opt/amitos/`;
+	}
+
+	const vps: SyncTarget = { id: 'vps1', type: 'vps', host: '192.168.1.100', port: 22, syncEnabled: true };
+	const rpi: SyncTarget = { id: 'rpi1', type: 'rpi', host: '192.168.1.50', port: 22, syncEnabled: true };
+
+	it('generates valid SSH command for VPS', () => {
+		const cmd = buildSshCommand(vps);
+		expect(cmd).toContain('ssh');
+		expect(cmd).toContain(vps.host);
+	});
+
+	it('generates valid SSH command for RPi', () => {
+		const cmd = buildSshCommand(rpi);
+		expect(cmd).toContain(rpi.host);
+	});
+
+	it('throws for local sync via SSH', () => {
+		const local: SyncTarget = { id: 'local', type: 'local', host: 'localhost', port: 0, syncEnabled: false };
+		expect(() => buildSshCommand(local)).toThrow();
+	});
+
+	it('generates rsync command with correct target path', () => {
+		const cmd = buildRsyncCommand(rpi, '/home/user/.amitos/data');
+		expect(cmd).toContain('/opt/amitos/');
+		expect(cmd).toContain(rpi.host);
+		expect(cmd).toContain('rsync');
+	});
+});

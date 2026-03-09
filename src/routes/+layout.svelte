@@ -4,17 +4,19 @@
 	import '../app.css';
 
 	const navigation = [
-		{ href: '/', label: 'Dashboard', icon: '⬡', emoji: true },
-		{ href: '/today', label: 'Today', icon: '☀️', emoji: true },
-		{ href: '/kaizen', label: 'Kaizen', icon: '♾️', emoji: true },
-		{ href: '/memory', label: 'Memory', icon: '🧠', emoji: true },
-		{ href: '/tools', label: 'Tools', icon: '🛠️', emoji: true },
-		{ href: '/workflows', label: 'Workflows', icon: '⚡', emoji: true },
-		{ href: '/deploy', label: 'Deploy', icon: '🚀', emoji: true },
-		{ href: '/settings', label: 'API Keys', icon: '🔑', emoji: true },
-		{ href: '/voice', label: 'Voice', icon: '🎙️', emoji: true },
-		{ href: '/mcp', label: 'MCP', icon: '⚡', emoji: true },
-		{ href: '/mobile', label: 'Mobile', icon: '📱', emoji: true }
+		{ href: '/', label: 'Dashboard', icon: '⬡', badge: '' },
+		{ href: '/today', label: 'Today', icon: '☀️', badge: 'NOW' },
+		{ href: '/kaizen', label: 'Kaizen', icon: '♾️', badge: '' },
+		{ href: '/memory', label: 'Memory', icon: '🧠', badge: '' },
+		{ href: '/vy', label: 'Vy Agent', icon: '🖥️', badge: 'AI' },
+		{ href: '/panda', label: 'Panda', icon: '🐼', badge: 'PHONE' },
+		{ href: '/tools', label: 'Tools', icon: '🛠️', badge: '' },
+		{ href: '/workflows', label: 'Workflows', icon: '⚡', badge: '' },
+		{ href: '/deploy', label: 'Deploy', icon: '🚀', badge: '' },
+		{ href: '/voice', label: 'Voice', icon: '🎙️', badge: '' },
+		{ href: '/mcp', label: 'MCP', icon: '🔌', badge: '' },
+		{ href: '/mobile', label: 'Mobile Sync', icon: '📱', badge: '' },
+		{ href: '/settings', label: 'API Keys', icon: '🔑', badge: '' }
 	];
 
 	let { children } = $props();
@@ -60,8 +62,8 @@
 					>
 						<span class="text-base leading-none">{item.icon}</span>
 						<span>{item.label}</span>
-						{#if item.href === '/today'}
-							<span class="ml-auto rounded-full bg-cyan-400/20 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-300">NOW</span>
+						{#if item.badge}
+							<span class="ml-auto rounded-full {item.badge === 'NOW' ? 'bg-cyan-400/20 text-cyan-300' : item.badge === 'AI' ? 'bg-violet-400/20 text-violet-300' : item.badge === 'PHONE' ? 'bg-cyan-400/15 text-cyan-400' : 'bg-slate-700 text-slate-400'} px-1.5 py-0.5 text-[9px] font-bold">{item.badge}</span>
 						{/if}
 					</a>
 				{/each}
