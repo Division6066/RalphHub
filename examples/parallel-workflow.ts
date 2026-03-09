@@ -155,10 +155,19 @@ function launchDiffusionAgent(workspace: string, env: NodeJS.ProcessEnv) {
   mkdirSync(join(CONFIG.logs, 'video-output'), { recursive: true });
 
   // Determine the launch command — supports bun/uv/pip
-  const launchCmd = existsSync(join(workspace, 'pyproject.toml'))
-    ? ['uv', 'run', 'python', '-m', 'agent']
+  // uv may be at python3 -m uv or in ~/.cargo/bin or ~/.local/bin
+  const uvCmd = (() => {
+    try { execSync('uv --version', { stdio: 'pipe' }); return 'uv'; } catch { /* skip */ }
+    try { execSync('python3 -m uv --version', { stdio: 'pipe' }); return 'python3 -m uv'; } catch { /* skip */ }
+    return null;
+  })();
+
+  const launchCmd: string[] = existsSync(join(workspace, 'pyproject.toml')) && uvCmd
+    ? [uvCmd.includes(' ') ? 'python3' : 'uv', ...(uvCmd.includes(' ') ? ['-m', 'uv'] : []), 'run', 'python', '-m', 'agent']
+    : existsSync(join(workspace, 'main.py'))
+    ? ['python3', join(workspace, 'main.py')]
     : existsSync(join(workspace, 'requirements.txt'))
-    ? ['python', '-m', 'agent']
+    ? ['python3', '-m', 'agent']
     : existsSync(join(workspace, 'package.json'))
     ? ['bun', 'run', 'start']
     : ['echo', '[Diffusionstudio] Ready (no entry point — deploy via RalphHub UI)'];

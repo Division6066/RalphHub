@@ -1,0 +1,5 @@
+{"id":"3e9ec98b-575a-4e1c-a1d6-2551851e7f10","title":"[Parallel] Code Feature + Edit Demo Video — in progress","source":"parallel-workflow","status":"todo","priority":"normal","createdAt":"2026-03-09T09:36:50.666Z"}
+{"id":"ed0f51c8-b87c-494e-ab2b-5d619c86015f","title":"[Parallel] Code Feature + Edit Demo Video — in progress","source":"parallel-workflow","status":"todo","priority":"normal","createdAt":"2026-03-09T09:38:16.171Z"}
+{"id":"06cbab9e-293c-46e8-905d-3140a881bfdc","title":"Review Superpowers output — exit code: 0","source":"superpowers","status":"todo","priority":"normal","createdAt":"2026-03-09T09:38:16.203Z"}
+{"id":"ea1356ac-182e-4cfd-b117-b3d8954e32b4","title":"Review Diffusionstudio video output — exit code: 1","source":"diffusionstudio-agent","status":"todo","priority":"normal","createdAt":"2026-03-09T09:38:18.052Z"}
+{"id":"c5b13992-921a-40f6-a75b-d96fd3b5f20e","title":"[Done] Code Feature + Edit Demo Video — Review outputs in ./logs/","source":"parallel-workflow","status":"todo","priority":"normal","createdAt":"2026-03-09T09:38:26.199Z"}
