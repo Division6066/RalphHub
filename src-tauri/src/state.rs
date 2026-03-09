@@ -9,11 +9,13 @@ use rusqlite::{params, Connection};
 use tauri::{AppHandle, Manager};
 
 use crate::models::{BunStatus, DashboardSnapshot, WorkspacePaths};
+use crate::process_manager::{new_registry, ProcessRegistry};
 use crate::tool_registry::all_tools;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub paths: RalphPaths,
+    pub process_registry: ProcessRegistry,
 }
 
 #[derive(Debug, Clone)]
@@ -47,7 +49,10 @@ impl AppState {
         paths.ensure_directories()?;
         initialize_database(&paths.database_path)?;
 
-        Ok(Self { paths })
+        Ok(Self {
+            paths,
+            process_registry: new_registry(),
+        })
     }
 
     pub fn snapshot(&self) -> Result<DashboardSnapshot> {
@@ -218,6 +223,18 @@ fn initialize_database(path: &Path) -> Result<()> {
             model TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS parallel_workflows (
+            id TEXT PRIMARY KEY,
+            workflow_name TEXT NOT NULL,
+            tool_ids TEXT NOT NULL DEFAULT '[]',
+            statuses TEXT NOT NULL DEFAULT '[]',
+            memory_spine_id TEXT NOT NULL DEFAULT '',
+            kaizen_task_id TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'running',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         ",
     )?;
 
@@ -229,7 +246,7 @@ fn initialize_database(path: &Path) -> Result<()> {
          )",
         params![
             "bootstrap",
-            "Initialized RalphHub state database",
+            "Initialized AmitOS state database",
             Option::<String>::None,
             chrono::Utc::now().to_rfc3339()
         ],

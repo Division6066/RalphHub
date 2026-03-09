@@ -8,16 +8,18 @@
 
 	const navigation = [
 		{ href: '/', label: 'Dashboard', icon: '⬡', badge: '' },
-		{ href: '/kaizen', label: 'Kaizen Tasks', icon: '♾️', badge: 'NEW' },
+		{ href: '/today', label: 'Today Board', icon: '📅', badge: 'NEW' },
+		{ href: '/kaizen', label: 'Kaizen Tasks', icon: '♾️', badge: '' },
 		{ href: '/memory', label: 'Memory Spine', icon: '🧠', badge: '' },
-		{ href: '/computer-control', label: 'Vy Agent', icon: '🖥️', badge: 'AI' },
+		{ href: '/vy', label: 'Vy Agent', icon: '🖥️', badge: 'AI' },
 		{ href: '/panda', label: 'Panda Phone', icon: '🐼', badge: 'PHONE' },
+		{ href: '/parallel', label: 'Parallel Run', icon: '⚡', badge: 'NEW' },
 		{ href: '/voice', label: 'Voice + Chat', icon: '🎙️', badge: '' },
 		{ href: '/remote-nodes', label: 'VPS + RPi', icon: '☁️', badge: '' },
 		{ href: '/mcp', label: 'MCP Browser', icon: '🔌', badge: '' },
 		{ href: '/mobile', label: 'Mobile Sync', icon: '📱', badge: '' },
 		{ href: '/tools', label: 'Tools', icon: '🛠️', badge: '' },
-		{ href: '/workflows', label: 'Workflows', icon: '⚡', badge: '' },
+		{ href: '/workflows', label: 'Workflows', icon: '🔄', badge: '' },
 		{ href: '/deploy', label: 'Deploy', icon: '🚀', badge: '' },
 		{ href: '/settings', label: 'API Keys', icon: '🔑', badge: '' },
 	];

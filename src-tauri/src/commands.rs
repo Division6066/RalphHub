@@ -10,16 +10,19 @@ use tauri::State;
 use crate::{
     models::{
         ApiUsageLog, CommandResponse, CreateKaizenTaskRequest, CreateProviderRequest,
-        DashboardSnapshot, KaizenTask, LogApiUsageRequest, MemorySpineEntry, MemorySpineStats,
-        Provider, SecureStoreConfig, ToolManifest, UpdateProviderRequest,
+        DashboardSnapshot, KaizenTask, LaunchBackgroundRequest, LogApiUsageRequest,
+        MemorySpineEntry, MemorySpineStats, ParallelWorkflowRequest, ParallelWorkflowResult,
+        Provider, SecureStoreConfig, ToolLogsResult, ToolManifest, ToolProcessStatus,
+        UpdateProviderRequest, VoiceCommandRequest, VoiceCommandResult,
     },
+    process_manager,
     provider_registry::{
         create_kaizen_task, create_provider, delete_provider, get_memory_spine_stats,
         list_kaizen_tasks, list_memory_entries, list_providers, list_usage_logs, log_api_usage,
         search_providers, update_kaizen_task_status, update_provider,
     },
     state::{bun_installer_hint, detect_bun_status, AppState},
-    tool_registry::all_tools,
+    tool_registry::{all_tools, get_tool},
 };
 
 #[tauri::command]
@@ -66,7 +69,7 @@ pub fn ensure_bun() -> Result<CommandResponse, String> {
         })
     } else {
         Err(format!(
-            "Bun installation failed. Run {} manually and restart RalphHub.",
+            "Bun installation failed. Run {} manually and restart AmitOS.",
             bun_installer_hint()
         ))
     }
@@ -125,7 +128,7 @@ fn ensure_state_file(workspace: &Path) -> Result<PathBuf, String> {
     if !path.exists() {
         fs::write(
             &path,
-            "# RalphHub State\n\n- Status: initialized\n- Next step: update this file from the active workflow.\n",
+            "# AmitOS State\n\n- Status: initialized\n- Next step: update this file from the active workflow.\n",
         )
         .map_err(|error| error.to_string())?;
     }
@@ -324,4 +327,234 @@ pub fn list_kaizen_tasks_cmd(state: State<'_, AppState>, status: Option<String>)
 pub fn update_kaizen_task_status_cmd(state: State<'_, AppState>, id: String, status: String) -> Result<KaizenTask, String> {
     let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
     update_kaizen_task_status(&conn, &id, &status).map_err(|e| e.to_string())
+}
+
+// ─── Background Process / Parallel Execution Commands ────────────────────────
+
+#[tauri::command]
+pub fn launch_tool_background(
+    state: State<'_, AppState>,
+    request: LaunchBackgroundRequest,
+) -> Result<ToolProcessStatus, String> {
+    let tool = get_tool(&request.tool_id)
+        .ok_or_else(|| format!("Unknown tool: {}", request.tool_id))?;
+
+    if tool.repo_url.starts_with("internal://") {
+        return Err(format!("{} is an internal capability and cannot be launched as a background process.", tool.name));
+    }
+
+    let status = process_manager::launch_background(
+        &state.process_registry,
+        &request.tool_id,
+        &tool.name,
+        &request.workspace_path,
+        &tool.launch_command,
+        &request.env_entries,
+        &state.paths.logs_dir,
+    )?;
+
+    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
+    let _ = log_api_usage(&conn, &crate::models::LogApiUsageRequest {
+        provider_id: "background-process".to_string(),
+        provider_name: "Background Process".to_string(),
+        model: "process".to_string(),
+        tokens_in: 0,
+        tokens_out: 0,
+        cost_usd: 0.0,
+        output_summary: format!("Background launch: {} (pid:{}) at {}", tool.name, status.pid.unwrap_or(0), request.workspace_path),
+        tool_id: request.tool_id.clone(),
+        workflow_id: String::new(),
+    });
+
+    Ok(status)
+}
+
+#[tauri::command]
+pub fn get_tool_process_status(state: State<'_, AppState>, tool_id: String) -> ToolProcessStatus {
+    process_manager::get_status(&state.process_registry, &tool_id)
+}
+
+#[tauri::command]
+pub fn stop_tool_process(state: State<'_, AppState>, tool_id: String) -> Result<CommandResponse, String> {
+    process_manager::stop_tool(&state.process_registry, &tool_id)?;
+    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
+    let _ = log_api_usage(&conn, &crate::models::LogApiUsageRequest {
+        provider_id: "background-process".to_string(),
+        provider_name: "Background Process".to_string(),
+        model: "process".to_string(),
+        tokens_in: 0,
+        tokens_out: 0,
+        cost_usd: 0.0,
+        output_summary: format!("Stopped background tool: {tool_id}"),
+        tool_id: tool_id.clone(),
+        workflow_id: String::new(),
+    });
+    Ok(CommandResponse { ok: true, message: format!("Tool {tool_id} stopped.") })
+}
+
+#[tauri::command]
+pub fn get_tool_logs(state: State<'_, AppState>, tool_id: String, tail_lines: Option<usize>) -> ToolLogsResult {
+    let lines = process_manager::read_logs(&state.process_registry, &tool_id, tail_lines.unwrap_or(50));
+    let log_path = {
+        let reg = state.process_registry.lock().unwrap_or_else(|e| e.into_inner());
+        reg.get(&tool_id)
+            .map(|t| t.log_path.clone())
+            .unwrap_or_else(|| state.paths.logs_dir.join(format!("{tool_id}.log")).display().to_string())
+    };
+    ToolLogsResult { tool_id, log_path, lines }
+}
+
+#[tauri::command]
+pub fn list_running_tools(state: State<'_, AppState>) -> Vec<ToolProcessStatus> {
+    process_manager::list_all(&state.process_registry)
+}
+
+#[tauri::command]
+pub fn run_parallel_workflow(
+    state: State<'_, AppState>,
+    request: ParallelWorkflowRequest,
+) -> Result<ParallelWorkflowResult, String> {
+    let workflow_id = uuid::Uuid::new_v4().to_string();
+    let mut statuses = Vec::new();
+    let mut errors: Vec<String> = Vec::new();
+
+    for config in &request.tool_configs {
+        let tool = match get_tool(&config.tool_id) {
+            Some(t) => t,
+            None => {
+                errors.push(format!("Unknown tool: {}", config.tool_id));
+                continue;
+            }
+        };
+        match process_manager::launch_background(
+            &state.process_registry,
+            &config.tool_id,
+            &tool.name,
+            &config.workspace_path,
+            &tool.launch_command,
+            &config.env_entries,
+            &state.paths.logs_dir,
+        ) {
+            Ok(s) => statuses.push(s),
+            Err(e) => {
+                errors.push(format!("{}: {e}", config.tool_id));
+                statuses.push(ToolProcessStatus {
+                    tool_id: config.tool_id.clone(),
+                    name: tool.name.clone(),
+                    status: format!("error: {e}"),
+                    pid: None,
+                    started_at: None,
+                    log_path: None,
+                });
+            }
+        }
+    }
+
+    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
+    let tool_names: Vec<String> = request.tool_configs.iter().filter_map(|c| get_tool(&c.tool_id).map(|t| t.name)).collect();
+    let summary = format!(
+        "Parallel workflow '{}' launched tools: {} | workflow_id: {}{}",
+        request.workflow_name,
+        tool_names.join(", "),
+        workflow_id,
+        if errors.is_empty() { String::new() } else { format!(" | errors: {}", errors.join("; ")) }
+    );
+
+    let usage_log = log_api_usage(&conn, &crate::models::LogApiUsageRequest {
+        provider_id: "parallel-executor".to_string(),
+        provider_name: "Parallel Executor".to_string(),
+        model: "parallel".to_string(),
+        tokens_in: 0,
+        tokens_out: 0,
+        cost_usd: 0.0,
+        output_summary: summary.clone(),
+        tool_id: "parallel-workflow".to_string(),
+        workflow_id: workflow_id.clone(),
+    }).map_err(|e| e.to_string())?;
+
+    let kaizen_task = create_kaizen_task(&conn, &crate::models::CreateKaizenTaskRequest {
+        title: format!("Parallel workflow: {}", request.workflow_name),
+        description: format!("Tools: {} | Status: {} launched, {} errors | {}", tool_names.join(", "), statuses.iter().filter(|s| s.status == "running").count(), errors.len(), summary),
+        priority: "high".to_string(),
+        source: "parallel-executor".to_string(),
+        provider_id: "parallel-executor".to_string(),
+        usage_log_id: usage_log.id.clone(),
+    }).map_err(|e| e.to_string())?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let tool_ids_json = serde_json::to_string(&request.tool_configs.iter().map(|c| &c.tool_id).collect::<Vec<_>>()).unwrap_or_else(|_| "[]".to_string());
+    let statuses_json = serde_json::to_string(&statuses).unwrap_or_else(|_| "[]".to_string());
+    let _ = conn.execute(
+        "INSERT OR IGNORE INTO parallel_workflows (id, workflow_name, tool_ids, statuses, memory_spine_id, kaizen_task_id, status, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+        rusqlite::params![workflow_id, request.workflow_name, tool_ids_json, statuses_json, usage_log.id, kaizen_task.id, if errors.is_empty() { "running" } else { "partial" }, now],
+    );
+
+    Ok(ParallelWorkflowResult {
+        workflow_id,
+        workflow_name: request.workflow_name.clone(),
+        statuses,
+        memory_spine_id: usage_log.id,
+        kaizen_task_id: kaizen_task.id,
+    })
+}
+
+#[tauri::command]
+pub fn list_parallel_workflows(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare(
+        "SELECT id, workflow_name, tool_ids, statuses, memory_spine_id, kaizen_task_id, status, created_at FROM parallel_workflows ORDER BY created_at DESC LIMIT 50",
+    ).map_err(|e| e.to_string())?;
+    let rows = stmt.query_map([], |row| {
+        Ok(serde_json::json!({
+            "id": row.get::<_, String>(0)?,
+            "workflowName": row.get::<_, String>(1)?,
+            "toolIds": row.get::<_, String>(2)?,
+            "statuses": row.get::<_, String>(3)?,
+            "memorySpineId": row.get::<_, String>(4)?,
+            "kaizenTaskId": row.get::<_, String>(5)?,
+            "status": row.get::<_, String>(6)?,
+            "createdAt": row.get::<_, String>(7)?,
+        }))
+    }).map_err(|e| e.to_string())?.filter_map(|r| r.ok()).collect();
+    Ok(rows)
+}
+
+#[tauri::command]
+pub fn handle_voice_command(
+    state: State<'_, AppState>,
+    request: VoiceCommandRequest,
+) -> Result<VoiceCommandResult, String> {
+    let transcript = request.transcript.to_lowercase();
+    let result = if transcript.contains("superpowers") || transcript.contains("super powers") {
+        VoiceCommandResult { action: "launch_tool".to_string(), tool_id: Some("superpowers".to_string()), message: "Superpowers skill framework queued for launch. Navigate to Tools to start.".to_string(), success: true }
+    } else if transcript.contains("video") || transcript.contains("diffusion") || transcript.contains("edit") {
+        VoiceCommandResult { action: "launch_tool".to_string(), tool_id: Some("diffusionstudio-agent".to_string()), message: "Diffusionstudio video agent queued for launch in background.".to_string(), success: true }
+    } else if transcript.contains("parallel") || transcript.contains("both") {
+        VoiceCommandResult { action: "launch_parallel".to_string(), tool_id: None, message: "Parallel workflow queued: Superpowers + Diffusionstudio Agent.".to_string(), success: true }
+    } else if transcript.contains("stop") || transcript.contains("pause") || transcript.contains("halt") {
+        let running = process_manager::list_all(&state.process_registry);
+        let running_count = running.iter().filter(|s| s.status == "running").count();
+        VoiceCommandResult { action: "stop_all".to_string(), tool_id: None, message: format!("Stopping {running_count} running background processes."), success: true }
+    } else if transcript.contains("status") || transcript.contains("report") {
+        let running = process_manager::list_all(&state.process_registry);
+        let names: Vec<&str> = running.iter().filter(|s| s.status == "running").map(|s| s.name.as_str()).collect();
+        VoiceCommandResult { action: "status_report".to_string(), tool_id: None, message: if names.is_empty() { "No tools currently running.".to_string() } else { format!("Running: {}", names.join(", ")) }, success: true }
+    } else {
+        VoiceCommandResult { action: "unknown".to_string(), tool_id: None, message: format!("Command not recognized: '{}'. Try: 'launch superpowers', 'start video edit', 'run parallel', 'stop all', 'status'.", request.transcript), success: false }
+    };
+
+    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
+    let _ = log_api_usage(&conn, &crate::models::LogApiUsageRequest {
+        provider_id: "voice-assistant".to_string(),
+        provider_name: "Voice Assistant".to_string(),
+        model: "speech-to-intent".to_string(),
+        tokens_in: 0,
+        tokens_out: 0,
+        cost_usd: 0.0,
+        output_summary: format!("Voice command: '{}' → action: {} | {}", request.transcript, result.action, result.message),
+        tool_id: result.tool_id.clone().unwrap_or_else(|| "voice-command".to_string()),
+        workflow_id: String::new(),
+    });
+
+    Ok(result)
 }

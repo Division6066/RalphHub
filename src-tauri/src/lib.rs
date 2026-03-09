@@ -2,6 +2,7 @@ mod commands;
 mod computer_agent;
 mod models;
 mod orchestrator;
+mod process_manager;
 mod provider_registry;
 mod state;
 mod tool_registry;
@@ -25,7 +26,7 @@ pub fn run() {
       app.handle()
         .plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
 
-      let state = AppState::init(app.handle()).expect("failed to initialize RalphHub state");
+      let state = AppState::init(app.handle()).expect("failed to initialize AmitOS state");
 
       // Seed default providers after DB init
       {
@@ -103,6 +104,15 @@ pub fn run() {
       voice_assistant::create_push_notification,
       voice_assistant::list_push_notifications,
       voice_assistant::mark_notification_read,
+      // ── New Tools: Background Process / Parallel Execution ──
+      commands::launch_tool_background,
+      commands::get_tool_process_status,
+      commands::stop_tool_process,
+      commands::get_tool_logs,
+      commands::list_running_tools,
+      commands::run_parallel_workflow,
+      commands::list_parallel_workflows,
+      commands::handle_voice_command,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
