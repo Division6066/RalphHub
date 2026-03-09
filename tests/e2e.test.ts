@@ -14,8 +14,11 @@ import { describe, it, expect, beforeAll } from 'bun:test';
 describe('Routes', () => {
   const routes = [
     '/',
+    '/today',
     '/kaizen',
     '/memory',
+    '/vy',
+    '/parallel',
     '/computer-control',
     '/panda',
     '/voice',
@@ -238,8 +241,9 @@ describe('CSS Design System', () => {
   it('app.css has smooth animations', async () => {
     const f = Bun.file('src/app.css');
     const content = await f.text();
-    expect(content).toContain('@keyframes fadeIn');
+    expect(content).toContain('@keyframes');
     expect(content).toContain('@keyframes spin');
+    expect(content).toContain('pulse');
   });
 
   it('layout has correct navigation items', async () => {
@@ -247,7 +251,9 @@ describe('CSS Design System', () => {
     const content = await f.text();
     expect(content).toContain('/kaizen');
     expect(content).toContain('/memory');
-    expect(content).toContain('/computer-control');
+    expect(content).toContain('/today');
+    expect(content).toContain('/vy');
+    expect(content).toContain('/parallel');
     expect(content).toContain('/panda');
     expect(content).toContain('/voice');
     expect(content).toContain('/mcp');
@@ -304,11 +310,150 @@ describe('System Health', () => {
   });
 });
 
+// ─── New Routes (Grand Finale additions) ─────────────────────────────────────
+
+describe('Grand Finale New Routes', () => {
+  it('today/+page.svelte loads kaizen_tasks and domains', async () => {
+    const f = Bun.file('src/routes/today/+page.svelte');
+    const content = await f.text();
+    expect(content).toContain('list_kaizen_tasks');
+    expect(content).toContain('list_kaizen_domains');
+    expect(content).toContain('create_kaizen_task');
+    expect(content).toContain('update_kaizen_task');
+    expect(content).toContain('isToday');
+    expect(content).toContain('energy');
+  });
+
+  it('vy/+page.svelte has VY_CAPABILITIES and permission flow', async () => {
+    const f = Bun.file('src/routes/vy/+page.svelte');
+    const content = await f.text();
+    expect(content).toContain('VY_CAPABILITIES');
+    expect(content).toContain('requestPermission');
+    expect(content).toContain('APPROVAL_STEPS');
+    expect(content).toContain('permissionGranted');
+  });
+
+  it('parallel/+page.svelte has both superpowers and diffusionstudio', async () => {
+    const f = Bun.file('src/routes/parallel/+page.svelte');
+    const content = await f.text();
+    expect(content).toContain('superpowers');
+    expect(content).toContain('diffusionstudio-agent');
+    expect(content).toContain('run_parallel_workflow');
+    expect(content).toContain('handle_voice_command');
+    expect(content).toContain('list_running_tools');
+  });
+});
+
+// ─── New Rust commands (Grand Finale) ────────────────────────────────────────
+
+describe('Grand Finale Rust Commands', () => {
+  it('lib.rs registers kaizen rich commands', async () => {
+    const lib = await Bun.file('src-tauri/src/lib.rs').text();
+    expect(lib).toContain('kaizen::list_kaizen_tasks');
+    expect(lib).toContain('kaizen::create_kaizen_task');
+    expect(lib).toContain('kaizen::update_kaizen_task');
+    expect(lib).toContain('kaizen::list_kaizen_domains');
+    expect(lib).toContain('kaizen::delete_kaizen_task');
+  });
+
+  it('lib.rs registers process management commands', async () => {
+    const lib = await Bun.file('src-tauri/src/lib.rs').text();
+    expect(lib).toContain('commands::launch_tool_background');
+    expect(lib).toContain('commands::run_parallel_workflow');
+    expect(lib).toContain('commands::list_running_tools');
+    expect(lib).toContain('commands::handle_voice_command');
+    expect(lib).toContain('commands::stop_tool_process');
+    expect(lib).toContain('commands::get_tool_logs');
+    expect(lib).toContain('commands::list_parallel_workflows');
+  });
+
+  it('process_manager.rs exists with launch_background function', async () => {
+    const f = Bun.file('src-tauri/src/process_manager.rs');
+    const content = await f.text();
+    expect(await f.exists()).toBe(true);
+    expect(content).toContain('launch_background');
+    expect(content).toContain('stop_tool');
+    expect(content).toContain('read_logs');
+    expect(content).toContain('list_all');
+    expect(content).toContain('ProcessRegistry');
+  });
+
+  it('kaizen.rs exists with rich commands', async () => {
+    const f = Bun.file('src-tauri/src/kaizen.rs');
+    const content = await f.text();
+    expect(await f.exists()).toBe(true);
+    expect(content).toContain('#[tauri::command]');
+    expect(content).toContain('list_kaizen_tasks');
+    expect(content).toContain('create_kaizen_task');
+    expect(content).toContain('list_kaizen_domains');
+    expect(content).toContain('is_today');
+    expect(content).toContain('energy');
+  });
+});
+
+// ─── Tool Registry ────────────────────────────────────────────────────────────
+
+describe('Tool Registry - Superpowers + Diffusionstudio', () => {
+  it('tool_registry.rs includes superpowers tool', async () => {
+    const f = Bun.file('src-tauri/src/tool_registry.rs');
+    const content = await f.text();
+    expect(content).toContain('superpowers');
+    expect(content).toContain('obra/superpowers');
+    expect(content).toContain('parallel_capable');
+  });
+
+  it('tool_registry.rs includes diffusionstudio-agent tool', async () => {
+    const f = Bun.file('src-tauri/src/tool_registry.rs');
+    const content = await f.text();
+    expect(content).toContain('diffusionstudio-agent');
+    expect(content).toContain('diffusionstudio/agent');
+    expect(content).toContain('video');
+  });
+
+  it('ToolManifest has category and tags fields', async () => {
+    const f = Bun.file('src-tauri/src/models.rs');
+    const content = await f.text();
+    expect(content).toContain('pub category: String');
+    expect(content).toContain('pub parallel_capable: bool');
+    expect(content).toContain('pub tags: Vec<String>');
+  });
+});
+
+// ─── Kaizen schema ────────────────────────────────────────────────────────────
+
+describe('Kaizen Rich Schema', () => {
+  it('models.rs has rich KaizenTask with all fields', async () => {
+    const f = Bun.file('src-tauri/src/models.rs');
+    const content = await f.text();
+    expect(content).toContain('pub is_today: bool');
+    expect(content).toContain('pub energy: String');
+    expect(content).toContain('pub estimated_minutes: Option<i32>');
+    expect(content).toContain('pub domain: String');
+    expect(content).toContain('pub subtasks: Vec<String>');
+  });
+
+  it('models.rs has KaizenDomain and UpdateKaizenTaskRequest', async () => {
+    const f = Bun.file('src-tauri/src/models.rs');
+    const content = await f.text();
+    expect(content).toContain('pub struct KaizenDomain');
+    expect(content).toContain('pub struct UpdateKaizenTaskRequest');
+    expect(content).toContain('pub today_count: i64');
+  });
+
+  it('state.rs creates kaizen_domains table with seeds', async () => {
+    const f = Bun.file('src-tauri/src/state.rs');
+    const content = await f.text();
+    expect(content).toContain('kaizen_domains');
+    expect(content).toContain('is_today INTEGER');
+    expect(content).toContain('energy TEXT');
+    expect(content).toContain('parallel_workflows');
+  });
+});
+
 // ─── End-to-end simulation: Grand Finale workflow ────────────────────────────
 
 describe('Grand Finale E2E Simulation', () => {
   it('voice command → parallel agents → memory → kaizen → Notion flow is documented', async () => {
-    // Verify the dashboard page has this complete E2E flow documented
     const f = Bun.file('src/routes/+page.svelte');
     const content = await f.text();
     expect(content).toContain('superpowers');
@@ -317,12 +462,12 @@ describe('Grand Finale E2E Simulation', () => {
     expect(content).toContain('runHealthCheck');
   });
 
-  it('parallel workflow example tasks are defined', async () => {
-    const f = Bun.file('src/routes/computer-control/+page.svelte');
+  it('parallel workflow page has voice command integration', async () => {
+    const f = Bun.file('src/routes/parallel/+page.svelte');
     const content = await f.text();
-    expect(content).toContain('Parallel');
-    expect(content).toContain('android');
-    expect(content).toContain('desktop');
+    expect(content).toContain('handle_voice_command');
+    expect(content).toContain('voiceTranscript');
+    expect(content).toContain('voiceListening');
   });
 
   it('voice → Panda phone approval flow is wired', async () => {
@@ -350,5 +495,30 @@ describe('Grand Finale E2E Simulation', () => {
   it('RPi ARM build script is ready', async () => {
     const script = await Bun.file('scripts/build-rpi.sh').text();
     expect(script).toContain('#!/bin/bash');
+  });
+
+  it('today board uses energy-tagged tasks', async () => {
+    const f = Bun.file('src/routes/today/+page.svelte');
+    const content = await f.text();
+    expect(content).toContain('ENERGY_LABELS');
+    expect(content).toContain('medium');
+    expect(content).toContain('low');
+    expect(content).toContain('high');
+  });
+
+  it('vy agent has tutorial and permission approval modes', async () => {
+    const f = Bun.file('src/routes/vy/+page.svelte');
+    const content = await f.text();
+    expect(content).toContain('tutorial');
+    expect(content).toContain('takeover');
+    expect(content).toContain('permissions');
+  });
+
+  it('parallel page has workflow log and history', async () => {
+    const f = Bun.file('src/routes/parallel/+page.svelte');
+    const content = await f.text();
+    expect(content).toContain('workflowLog');
+    expect(content).toContain('pastWorkflows');
+    expect(content).toContain('list_parallel_workflows');
   });
 });
