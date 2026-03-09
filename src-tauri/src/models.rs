@@ -1,6 +1,123 @@
 use serde::{Deserialize, Serialize};
 
-// ─── Tool / Provider ──────────────────────────────────────────────────────────
+// ─── Dynamic Provider Registry (from main) ────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Provider {
+    pub id: String,
+    pub name: String,
+    pub category: String,
+    pub base_url: String,
+    pub auth_type: String,
+    pub api_key_env: String,
+    pub models: Vec<String>,
+    pub enabled: bool,
+    pub is_local: bool,
+    pub description: String,
+    pub docs_url: String,
+    pub logo_emoji: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateProviderRequest {
+    pub name: String,
+    pub category: String,
+    pub base_url: String,
+    pub auth_type: String,
+    pub api_key_env: String,
+    pub models: Vec<String>,
+    pub is_local: bool,
+    pub description: String,
+    pub docs_url: String,
+    pub logo_emoji: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateProviderRequest {
+    pub id: String,
+    pub name: Option<String>,
+    pub base_url: Option<String>,
+    pub api_key_env: Option<String>,
+    pub models: Option<Vec<String>>,
+    pub enabled: Option<bool>,
+    pub description: Option<String>,
+}
+
+// ─── API Usage Logging / Memory Spine (from main) ────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiUsageLog {
+    pub id: String,
+    pub provider_id: String,
+    pub provider_name: String,
+    pub model: String,
+    pub tokens_in: i64,
+    pub tokens_out: i64,
+    pub cost_usd: f64,
+    pub output_summary: String,
+    pub tool_id: String,
+    pub workflow_id: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LogApiUsageRequest {
+    pub provider_id: String,
+    pub provider_name: String,
+    pub model: String,
+    pub tokens_in: i64,
+    pub tokens_out: i64,
+    pub cost_usd: f64,
+    pub output_summary: String,
+    pub tool_id: String,
+    pub workflow_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MemorySpineEntry {
+    pub id: String,
+    pub entry_type: String,
+    pub content: String,
+    pub tags: Vec<String>,
+    pub provider_id: String,
+    pub model: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MemorySpineStats {
+    pub total_entries: i64,
+    pub total_tokens: i64,
+    pub total_cost_usd: f64,
+    pub providers_used: Vec<String>,
+    pub recent_logs: Vec<ApiUsageLog>,
+    pub active_tasks: Vec<KaizenTask>,
+}
+
+// ─── Static API Provider catalog (ours) ──────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiProvider {
+    pub id: String,
+    pub name: String,
+    pub category: String,
+    pub key_name: String,
+    pub url: String,
+    pub description: String,
+    pub color: String,
+}
+
+// ─── Tool Manifest ────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -16,18 +133,6 @@ pub struct ToolManifest {
     pub needs_sandbox: bool,
     pub required_keys: Vec<String>,
     pub tags: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ApiProvider {
-    pub id: String,
-    pub name: String,
-    pub category: String,
-    pub key_name: String,
-    pub url: String,
-    pub description: String,
-    pub color: String,
 }
 
 // ─── Paths / Status ───────────────────────────────────────────────────────────
@@ -67,17 +172,6 @@ pub struct DashboardSnapshot {
     pub kaizen_task_count: i64,
     pub today_task_count: i64,
     pub api_key_count: i64,
-}
-
-// ─── API Keys ─────────────────────────────────────────────────────────────────
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ApiKeyEntry {
-    pub provider_id: String,
-    pub key_name: String,
-    pub masked_value: String,
-    pub saved_at: String,
 }
 
 // ─── Commands ─────────────────────────────────────────────────────────────────
@@ -169,7 +263,7 @@ pub struct WorkflowRun {
     pub updated_at: String,
 }
 
-// ─── Kaizen / Today Board ─────────────────────────────────────────────────────
+// ─── Kaizen OS (full schema — ours) ──────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -190,6 +284,13 @@ pub struct KaizenTask {
     pub created_at: String,
     pub updated_at: String,
     pub due_date: Option<String>,
+    // Provider-registry fields (from main, optional for compatibility)
+    #[serde(default)]
+    pub source: String,
+    #[serde(default)]
+    pub provider_id: String,
+    #[serde(default)]
+    pub usage_log_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -206,6 +307,13 @@ pub struct CreateKaizenTaskRequest {
     pub estimated_minutes: Option<i32>,
     pub tags: Option<Vec<String>>,
     pub due_date: Option<String>,
+    // Provider-registry extras (optional)
+    #[serde(default)]
+    pub source: String,
+    #[serde(default)]
+    pub provider_id: String,
+    #[serde(default)]
+    pub usage_log_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -237,7 +345,7 @@ pub struct KaizenDomain {
     pub today_count: i64,
 }
 
-// ─── Memory ───────────────────────────────────────────────────────────────────
+// ─── Memory Spine (ours — richer) ────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

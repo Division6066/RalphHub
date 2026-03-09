@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
 	import '../app.css';
+	import ModelSwitcher from '$lib/components/ModelSwitcher.svelte';
+	import { loadProviders } from '$lib/utils/provider-registry';
 
 	const navigation = [
 		{ href: '/', label: 'Dashboard', icon: '⬡', emoji: true },
@@ -18,6 +21,10 @@
 	];
 
 	let { children } = $props();
+
+	onMount(async () => {
+		await loadProviders().catch(() => {});
+	});
 
 	function isActive(href: string) {
 		if (href === '/') return page.url.pathname === '/';
@@ -67,7 +74,13 @@
 				{/each}
 			</nav>
 
-			<div class="mt-4 rounded-xl border border-violet-500/20 bg-violet-500/8 p-3">
+			<!-- Active Model Switcher -->
+			<div class="mt-4">
+				<p class="mb-1.5 text-[10px] uppercase tracking-[0.25em] text-slate-600 font-semibold">Active Model</p>
+				<ModelSwitcher compact />
+			</div>
+
+			<div class="mt-3 rounded-xl border border-violet-500/20 bg-violet-500/8 p-3">
 				<p class="text-[10px] uppercase tracking-[0.25em] text-violet-300/80 font-semibold">AmitOS v1.0</p>
 				<p class="mt-1.5 text-xs leading-5 text-slate-400">
 					Full Kaizen OS + Memory + Voice + 50+ API providers.

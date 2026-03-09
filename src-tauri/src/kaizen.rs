@@ -32,7 +32,7 @@ pub fn list_kaizen_tasks(
     let sql = format!(
         "SELECT id, title, description, domain, status, is_today, is_minimum_version,
                 priority, parent_id, subtasks, energy, estimated_minutes, tags, due_date,
-                created_at, updated_at
+                source, provider_id, usage_log_id, created_at, updated_at
          FROM kaizen_tasks
          WHERE {}
          ORDER BY is_today DESC, priority ASC, created_at DESC",
@@ -59,8 +59,11 @@ pub fn list_kaizen_tasks(
                 estimated_minutes: row.get(11)?,
                 tags: serde_json::from_str(&tags_json).unwrap_or_default(),
                 due_date: row.get(13)?,
-                created_at: row.get(14)?,
-                updated_at: row.get(15)?,
+                source: row.get(14).unwrap_or_default(),
+                provider_id: row.get(15).unwrap_or_default(),
+                usage_log_id: row.get(16).unwrap_or_default(),
+                created_at: row.get(17)?,
+                updated_at: row.get(18)?,
             })
         })
         .map_err(|e| e.to_string())?
@@ -120,6 +123,9 @@ pub fn create_kaizen_task(
         estimated_minutes: request.estimated_minutes,
         tags,
         due_date: request.due_date,
+        source: request.source,
+        provider_id: request.provider_id,
+        usage_log_id: request.usage_log_id,
         created_at: now.clone(),
         updated_at: now,
     })
@@ -322,6 +328,9 @@ pub fn decompose_task(
             estimated_minutes: None,
             tags: vec![],
             due_date: None,
+            source: String::new(),
+            provider_id: String::new(),
+            usage_log_id: String::new(),
             created_at: now.clone(),
             updated_at: now.clone(),
         });
