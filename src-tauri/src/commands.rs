@@ -8,18 +8,9 @@ use std::{
 use tauri::State;
 
 use crate::{
-    models::{
-        ApiUsageLog, CommandResponse, CreateKaizenTaskRequest, CreateProviderRequest,
-        DashboardSnapshot, KaizenTask, LogApiUsageRequest, MemorySpineEntry, MemorySpineStats,
-        Provider, SecureStoreConfig, ToolManifest, UpdateProviderRequest,
-    },
-    provider_registry::{
-        create_kaizen_task, create_provider, delete_provider, get_memory_spine_stats,
-        list_kaizen_tasks, list_memory_entries, list_providers, list_usage_logs, log_api_usage,
-        search_providers, update_kaizen_task_status, update_provider,
-    },
+    models::{ApiProvider, CommandResponse, DashboardSnapshot, SecureStoreConfig, ToolManifest},
     state::{bun_installer_hint, detect_bun_status, AppState},
-    tool_registry::all_tools,
+    tool_registry::{all_providers, all_tools},
 };
 
 #[tauri::command]
@@ -30,6 +21,11 @@ pub fn get_dashboard_snapshot(state: State<'_, AppState>) -> Result<DashboardSna
 #[tauri::command]
 pub fn list_builtin_tools() -> Vec<ToolManifest> {
     all_tools()
+}
+
+#[tauri::command]
+pub fn list_api_providers() -> Vec<ApiProvider> {
+    all_providers()
 }
 
 #[tauri::command]
@@ -245,83 +241,4 @@ fn editor_candidates() -> Vec<String> {
     }
 
     candidates
-}
-
-// ─── Provider Registry Commands ───────────────────────────────────────────────
-
-#[tauri::command]
-pub fn list_providers_cmd(state: State<'_, AppState>, category: Option<String>) -> Result<Vec<Provider>, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    list_providers(&conn, category.as_deref()).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn create_provider_cmd(state: State<'_, AppState>, req: CreateProviderRequest) -> Result<Provider, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    create_provider(&conn, &req).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn update_provider_cmd(state: State<'_, AppState>, req: UpdateProviderRequest) -> Result<Provider, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    update_provider(&conn, &req).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn delete_provider_cmd(state: State<'_, AppState>, id: String) -> Result<CommandResponse, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    delete_provider(&conn, &id).map_err(|e| e.to_string())?;
-    Ok(CommandResponse { ok: true, message: format!("Provider {id} deleted.") })
-}
-
-#[tauri::command]
-pub fn search_providers_cmd(state: State<'_, AppState>, query: String) -> Result<Vec<Provider>, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    search_providers(&conn, &query).map_err(|e| e.to_string())
-}
-
-// ─── API Usage Logging Commands ───────────────────────────────────────────────
-
-#[tauri::command]
-pub fn log_api_usage_cmd(state: State<'_, AppState>, req: LogApiUsageRequest) -> Result<ApiUsageLog, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    log_api_usage(&conn, &req).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn list_usage_logs_cmd(state: State<'_, AppState>, limit: Option<i64>) -> Result<Vec<ApiUsageLog>, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    list_usage_logs(&conn, limit.unwrap_or(50)).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn get_memory_spine_stats_cmd(state: State<'_, AppState>) -> Result<MemorySpineStats, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    get_memory_spine_stats(&conn).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn list_memory_entries_cmd(state: State<'_, AppState>, limit: Option<i64>) -> Result<Vec<MemorySpineEntry>, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    list_memory_entries(&conn, limit.unwrap_or(50)).map_err(|e| e.to_string())
-}
-
-// ─── Kaizen Task Commands ─────────────────────────────────────────────────────
-
-#[tauri::command]
-pub fn create_kaizen_task_cmd(state: State<'_, AppState>, req: CreateKaizenTaskRequest) -> Result<KaizenTask, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    create_kaizen_task(&conn, &req).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn list_kaizen_tasks_cmd(state: State<'_, AppState>, status: Option<String>) -> Result<Vec<KaizenTask>, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    list_kaizen_tasks(&conn, status.as_deref()).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn update_kaizen_task_status_cmd(state: State<'_, AppState>, id: String, status: String) -> Result<KaizenTask, String> {
-    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
-    update_kaizen_task_status(&conn, &id, &status).map_err(|e| e.to_string())
 }
