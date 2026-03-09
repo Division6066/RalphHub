@@ -539,13 +539,73 @@ pub fn run_parallel_workflow(
     )
     .map_err(|e| e.to_string())?;
 
-    Ok(ParallelWorkflowResult {
-        workflow_id,
-        workflow_name: request.workflow_name,
-        statuses,
-        memory_spine_id: usage_log.id,
-        kaizen_task_id: kaizen_task.id,
-    })
+    let result = ParallelWorkflowResult {
+        workflow_id: workflow_id.clone(),
+        workflow_name: request.workflow_name.clone(),
+        statuses: statuses.clone(),
+        memory_spine_id: usage_log.id.clone(),
+        kaizen_task_id: kaizen_task.id.clone(),
+    };
+
+    // Persist to parallel_workflows table
+    let tool_ids_json = serde_json::to_string(
+        &request.tool_configs.iter().map(|c| &c.tool_id).collect::<Vec<_>>(),
+    )
+    .unwrap_or_else(|_| "[]".to_string());
+
+    let statuses_json = serde_json::to_string(&statuses).unwrap_or_else(|_| "[]".to_string());
+
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let _ = conn.execute(
+        "INSERT OR IGNORE INTO parallel_workflows
+         (id, workflow_name, tool_ids, statuses, memory_spine_id, kaizen_task_id, status, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+        rusqlite::params![
+            workflow_id,
+            request.workflow_name,
+            tool_ids_json,
+            statuses_json,
+            usage_log.id,
+            kaizen_task.id,
+            if errors.is_empty() { "running" } else { "partial" },
+            now,
+        ],
+    );
+
+    Ok(result)
+}
+
+// ─── Parallel Workflow Persistence ───────────────────────────────────────────
+
+#[tauri::command]
+pub fn list_parallel_workflows(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+    let conn = rusqlite::Connection::open(&state.paths.database_path).map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, workflow_name, tool_ids, statuses, memory_spine_id, kaizen_task_id, status, created_at
+             FROM parallel_workflows ORDER BY created_at DESC LIMIT 50",
+        )
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(serde_json::json!({
+                "id": row.get::<_, String>(0)?,
+                "workflowName": row.get::<_, String>(1)?,
+                "toolIds": row.get::<_, String>(2)?,
+                "statuses": row.get::<_, String>(3)?,
+                "memorySpineId": row.get::<_, String>(4)?,
+                "kaizenTaskId": row.get::<_, String>(5)?,
+                "status": row.get::<_, String>(6)?,
+                "createdAt": row.get::<_, String>(7)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    Ok(rows)
 }
 
 // ─── Voice Command Handler ────────────────────────────────────────────────────

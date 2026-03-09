@@ -72,6 +72,18 @@
 	// Workflow step log
 	let workflowLog: string[] = [];
 
+	// Past parallel workflow history
+	type ParallelWorkflowRecord = {
+		id: string;
+		workflowName: string;
+		toolIds: string;
+		status: string;
+		createdAt: string;
+		memorySpineId: string;
+		kaizenTaskId: string;
+	};
+	let pastWorkflows: ParallelWorkflowRecord[] = [];
+
 	function log(msg: string) {
 		workflowLog = [`[${new Date().toLocaleTimeString()}] ${msg}`, ...workflowLog.slice(0, 49)];
 	}
@@ -92,6 +104,11 @@
 		// Start polling
 		pollingInterval = setInterval(() => pollStatuses(), 3000);
 		pollStatuses();
+
+		// Load past parallel workflows
+		try {
+			pastWorkflows = await invokeTauri<ParallelWorkflowRecord[]>('list_parallel_workflows');
+		} catch { /* ignore */ }
 	});
 
 	onDestroy(() => {
@@ -609,4 +626,32 @@
 			{/each}
 		</div>
 	</div>
+
+	<!-- Past parallel workflow runs -->
+	{#if pastWorkflows.length > 0}
+		<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
+			<div class="flex items-center justify-between mb-4">
+				<h2 class="text-base font-semibold text-white">📂 Past Parallel Workflow Runs</h2>
+				<span class="text-xs text-slate-500">{pastWorkflows.length} total</span>
+			</div>
+			<div class="space-y-2">
+				{#each pastWorkflows.slice(0, 10) as wf}
+					<div class="rounded-2xl border border-white/8 bg-white/2 p-3 flex items-center justify-between gap-3">
+						<div class="min-w-0">
+							<p class="text-sm font-medium text-white truncate">{wf.workflowName}</p>
+							<p class="text-xs text-slate-500 font-mono mt-0.5">{new Date(wf.createdAt).toLocaleString()}</p>
+						</div>
+						<div class="flex items-center gap-2 flex-shrink-0">
+							<span class="rounded-full px-2 py-0.5 text-xs {
+								wf.status === 'running' ? 'bg-green-500/15 text-green-400' :
+								wf.status === 'partial' ? 'bg-amber-500/10 text-amber-400' :
+								'bg-slate-700/50 text-slate-400'
+							}">{wf.status}</span>
+							<span class="text-xs text-slate-600 font-mono">id:{wf.id.slice(0,8)}</span>
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 </section>

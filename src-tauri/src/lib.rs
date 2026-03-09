@@ -74,6 +74,7 @@ pub fn run() {
       commands::get_tool_logs,
       commands::list_running_tools,
       commands::run_parallel_workflow,
+      commands::list_parallel_workflows,
       // Voice command handler
       commands::handle_voice_command,
     ])

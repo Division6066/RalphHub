@@ -223,6 +223,18 @@ fn initialize_database(path: &Path) -> Result<()> {
             model TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS parallel_workflows (
+            id TEXT PRIMARY KEY,
+            workflow_name TEXT NOT NULL,
+            tool_ids TEXT NOT NULL DEFAULT '[]',
+            statuses TEXT NOT NULL DEFAULT '[]',
+            memory_spine_id TEXT NOT NULL DEFAULT '',
+            kaizen_task_id TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'running',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         ",
     )?;
 
