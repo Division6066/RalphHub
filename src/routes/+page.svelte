@@ -2,166 +2,134 @@
 	import { onMount } from 'svelte';
 	import { invokeTauri, isDesktopRuntime } from '$lib/utils/desktop';
 
-	type DashboardSnapshot = {
+	type Snapshot = {
 		bun: { installed: boolean; version?: string | null };
 		managedProjectCount: number;
 		workflowRunCount: number;
-		overnightLoopCount: number;
+		memoryEntryCount: number;
+		kaizenTaskCount: number;
+		todayTaskCount: number;
+		apiKeyCount: number;
 	};
 
-	type ManagedProject = {
-		id: string;
-		slug: string;
-		sourceUrl: string;
-		status: string;
-		branch: string;
-		workspacePath: string;
-	};
-
-	let snapshot: DashboardSnapshot | null = null;
-	let projects: ManagedProject[] = [];
+	let snapshot: Snapshot | null = null;
 	let loading = true;
-	let error = '';
+	let isDesktop = false;
 
-	$: quickStats = [
-		{ label: 'Managed projects', value: String(snapshot?.managedProjectCount ?? 0), detail: 'Tracked in SQLite' },
-		{ label: 'Package manager', value: snapshot?.bun.installed ? `Bun ${snapshot?.bun.version ?? ''}`.trim() : 'Missing', detail: 'No npm fallback' },
-		{ label: 'Workflow runs', value: String(snapshot?.workflowRunCount ?? 0), detail: 'Prepared overnight chains' }
-	];
-
-	const milestones = [
-		'Bootstrap Bun-only Tauri + SvelteKit shell',
-		'Add Stronghold-backed central key manager',
-		'Implement deploy, tool launch, and workflow orchestration'
+	const features = [
+		{ icon: '☀️', title: 'Today Board', desc: 'ADHD-friendly daily focus — pick 3 tasks and ship them.', href: '/today', color: 'from-amber-500/20 to-orange-500/10', border: 'border-amber-400/20' },
+		{ icon: '♾️', title: 'Kaizen OS', desc: 'Continuous improvement across all life domains.', href: '/kaizen', color: 'from-violet-500/20 to-purple-500/10', border: 'border-violet-400/20' },
+		{ icon: '🧠', title: 'Memory Spine', desc: 'Capture and search everything you want to remember.', href: '/memory', color: 'from-cyan-500/20 to-blue-500/10', border: 'border-cyan-400/20' },
+		{ icon: '🛠️', title: '35+ AI Tools', desc: 'One-click deploy of Perplexica, Aider, OpenHands, and more.', href: '/tools', color: 'from-emerald-500/20 to-teal-500/10', border: 'border-emerald-400/20' },
+		{ icon: '🔑', title: '50+ API Keys', desc: 'Universal key manager — all providers, zero friction.', href: '/settings', color: 'from-rose-500/20 to-pink-500/10', border: 'border-rose-400/20' },
+		{ icon: '🎙️', title: 'Voice Mode', desc: 'Say commands to control AmitOS hands-free.', href: '/voice', color: 'from-indigo-500/20 to-blue-500/10', border: 'border-indigo-400/20' },
 	];
 
 	onMount(async () => {
-		if (!isDesktopRuntime()) {
-			loading = false;
-			return;
-		}
-
+		isDesktop = isDesktopRuntime();
+		if (!isDesktop) { loading = false; return; }
 		try {
-			const [dashboard, managedProjects] = await Promise.all([
-				invokeTauri<DashboardSnapshot>('get_dashboard_snapshot'),
-				invokeTauri<ManagedProject[]>('list_managed_projects')
-			]);
-			snapshot = dashboard;
-			projects = managedProjects;
-		} catch (loadError) {
-			error = loadError instanceof Error ? loadError.message : 'Failed to load dashboard.';
-		} finally {
-			loading = false;
-		}
+			snapshot = await invokeTauri<Snapshot>('get_dashboard_snapshot');
+		} catch {}
+		loading = false;
 	});
+
+	function stat(label: string, value: string | number, sub: string) {
+		return { label, value: String(value), sub };
+	}
+
+	$: stats = snapshot
+		? [
+				stat('Today tasks', snapshot.todayTaskCount, 'Waiting for you'),
+				stat('Total tasks', snapshot.kaizenTaskCount, 'Across all domains'),
+				stat('Memories', snapshot.memoryEntryCount, 'Saved to spine'),
+				stat('API providers', snapshot.apiKeyCount, 'Keys configured'),
+				stat('Workflows', snapshot.workflowRunCount, 'Runs prepared'),
+				stat('Bun', snapshot.bun.installed ? (snapshot.bun.version ?? '✓') : '✗', 'Package manager'),
+			]
+		: [];
 </script>
 
-<section class="space-y-6">
-	<div class="rounded-[2rem] border border-white/10 bg-slate-950/50 p-8 shadow-2xl shadow-cyan-950/20 backdrop-blur">
-		<div class="max-w-3xl">
-			<p class="text-sm uppercase tracking-[0.35em] text-cyan-300/80">Dashboard</p>
-			<h1 class="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-				One desktop surface for deploys, tools, and overnight Ralph loops.
+<section class="space-y-5">
+	<!-- Hero -->
+	<div class="relative overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-br from-violet-950/60 via-slate-950/80 to-cyan-950/40 p-8 shadow-2xl backdrop-blur">
+		<div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(139,92,246,0.15),transparent_60%)]"></div>
+		<div class="relative">
+			<div class="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-400/10 px-3 py-1">
+				<span class="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse"></span>
+				<span class="text-[11px] font-semibold uppercase tracking-widest text-violet-300">AmitOS v1.0 — Ready</span>
+			</div>
+			<h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+				Your Universal<br/>
+				<span class="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">AI Operating System</span>
 			</h1>
-			<p class="mt-4 text-base leading-7 text-slate-300 sm:text-lg">
-				RalphHub manages external AI repos as Bun-only workspaces, keeps launch state durable,
-				and opens every active project directly in your editor with `STATE.md` ready.
+			<p class="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+				Today Board · Kaizen OS · Memory Spine · 35+ AI tools · 50+ API providers · Voice mode · Desktop + Mobile.
+				Everything for ADHD-friendly deep work, shipped in one app.
 			</p>
-		</div>
-
-		<div class="mt-8 flex flex-wrap gap-3">
-			<a
-				href="/deploy"
-				class="rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/30"
-			>
-				Start a deploy
-			</a>
-			<a
-				href="/workflows"
-				class="rounded-full border border-white/12 bg-white/5 px-5 py-3 text-sm font-semibold text-white"
-			>
-				Compose a workflow
-			</a>
+			<div class="mt-6 flex flex-wrap gap-3">
+				<a href="/today" class="rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/30 transition hover:scale-105">
+					☀️ Start Today
+				</a>
+				<a href="/kaizen" class="rounded-xl border border-white/12 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10">
+					♾️ Kaizen Board
+				</a>
+				<a href="/tools" class="rounded-xl border border-white/12 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10">
+					🛠️ Launch Tools
+				</a>
+			</div>
 		</div>
 	</div>
 
-	<div class="grid gap-4 xl:grid-cols-3">
-		{#each quickStats as stat}
-			<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-				<p class="text-sm text-slate-400">{stat.label}</p>
-				<p class="mt-3 text-2xl font-semibold text-white">{stat.value}</p>
-				<p class="mt-2 text-sm text-slate-500">{stat.detail}</p>
-			</div>
+	<!-- Stats row -->
+	{#if !loading && stats.length > 0}
+		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+			{#each stats as s}
+				<div class="rounded-xl border border-white/8 bg-slate-950/50 p-4 backdrop-blur">
+					<p class="text-xs text-slate-500">{s.label}</p>
+					<p class="mt-1.5 text-2xl font-bold text-white">{s.value}</p>
+					<p class="mt-0.5 text-xs text-slate-500">{s.sub}</p>
+				</div>
+			{/each}
+		</div>
+	{:else if loading}
+		<div class="flex items-center gap-2 rounded-xl border border-white/8 bg-slate-950/50 p-4 text-sm text-slate-400">
+			<span class="animate-pulse">⬡</span>
+			<span>Loading AmitOS runtime…</span>
+		</div>
+	{/if}
+
+	<!-- Feature grid -->
+	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+		{#each features as f}
+			<a
+				href={f.href}
+				class={`group relative overflow-hidden rounded-2xl border ${f.border} bg-gradient-to-br ${f.color} p-6 transition hover:scale-[1.02] hover:shadow-lg`}
+			>
+				<div class="mb-3 text-3xl">{f.icon}</div>
+				<h3 class="text-base font-bold text-white">{f.title}</h3>
+				<p class="mt-2 text-sm leading-6 text-slate-300">{f.desc}</p>
+				<span class="absolute bottom-4 right-4 text-slate-600 transition group-hover:text-slate-400">→</span>
+			</a>
 		{/each}
 	</div>
 
-	<div class="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-		<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-			<div class="flex items-center justify-between">
-				<h2 class="text-lg font-semibold text-white">Milestone tracker</h2>
-				<span class="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-100">
-					Phase 1
-				</span>
-			</div>
-
-			<div class="mt-6 space-y-4">
-				{#each milestones as milestone, index}
-					<div class="flex items-start gap-4 rounded-2xl border border-white/6 bg-white/3 p-4">
-						<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-sm font-semibold text-cyan-100">
-							{index + 1}
-						</div>
-						<p class="pt-1 text-sm leading-6 text-slate-300">{milestone}</p>
-					</div>
-				{/each}
-			</div>
-		</div>
-
-		<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-			<h2 class="text-lg font-semibold text-white">Current status</h2>
-			<p class="mt-4 text-sm leading-6 text-slate-400">
-				{#if error}
-					{error}
-				{:else if loading}
-					Loading RalphHub runtime state...
-				{:else}
-					Bun status, deploy state, and workflow counts are now coming from the Tauri backend.
-				{/if}
-			</p>
-			<div class="mt-6 rounded-2xl border border-violet-400/20 bg-violet-500/10 p-4">
-				<p class="text-xs uppercase tracking-[0.25em] text-violet-200/80">Target</p>
-				<p class="mt-2 text-sm leading-6 text-slate-200">
-					Cross-platform Tauri app with Windows local builds and CI-driven `.dmg` / `.AppImage`
-					release artifacts.
-				</p>
-			</div>
+	<!-- Quick actions -->
+	<div class="rounded-2xl border border-white/8 bg-slate-950/50 p-6 backdrop-blur">
+		<h2 class="mb-4 text-base font-bold text-white">Quick Actions</h2>
+		<div class="flex flex-wrap gap-2">
+			<a href="/today" class="rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-medium text-amber-200 transition hover:bg-amber-400/20">☀️ Open Today Board</a>
+			<a href="/kaizen" class="rounded-xl border border-violet-400/25 bg-violet-400/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-400/20">+ New Kaizen Task</a>
+			<a href="/memory" class="rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/20">🧠 Add Memory</a>
+			<a href="/voice" class="rounded-xl border border-indigo-400/25 bg-indigo-400/10 px-4 py-2 text-sm font-medium text-indigo-200 transition hover:bg-indigo-400/20">🎙️ Voice Command</a>
+			<a href="/settings" class="rounded-xl border border-rose-400/25 bg-rose-400/10 px-4 py-2 text-sm font-medium text-rose-200 transition hover:bg-rose-400/20">🔑 Add API Key</a>
+			<a href="/workflows" class="rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-200 transition hover:bg-emerald-400/20">⚡ New Workflow</a>
 		</div>
 	</div>
 
-	<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-		<div class="flex items-center justify-between">
-			<h2 class="text-lg font-semibold text-white">Managed workspaces</h2>
-			<span class="text-sm text-slate-500">{projects.length} tracked</span>
+	{#if !isDesktop}
+		<div class="rounded-xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm text-amber-200">
+			<strong>Running in browser mode.</strong> For full functionality including secure key storage, Kaizen persistence, and tool deployment — launch the AmitOS desktop app.
 		</div>
-
-		<div class="mt-6 space-y-3">
-			{#if !projects.length}
-				<p class="text-sm text-slate-500">No managed repos yet. Deploy one from the Deploy tab.</p>
-			{:else}
-				{#each projects as project}
-					<div class="rounded-2xl border border-white/8 bg-white/3 p-4">
-						<div class="flex items-center justify-between gap-4">
-							<div>
-								<p class="text-sm font-medium text-white">{project.slug}</p>
-								<p class="mt-1 text-xs text-slate-500">{project.sourceUrl}</p>
-							</div>
-							<span class="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100">
-								{project.status}
-							</span>
-						</div>
-						<p class="mt-2 text-xs text-slate-500">Branch: {project.branch}</p>
-					</div>
-				{/each}
-			{/if}
-		</div>
-	</div>
+	{/if}
 </section>

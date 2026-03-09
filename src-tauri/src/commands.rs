@@ -8,9 +8,9 @@ use std::{
 use tauri::State;
 
 use crate::{
-    models::{CommandResponse, DashboardSnapshot, SecureStoreConfig, ToolManifest},
+    models::{ApiProvider, CommandResponse, DashboardSnapshot, SecureStoreConfig, ToolManifest},
     state::{bun_installer_hint, detect_bun_status, AppState},
-    tool_registry::all_tools,
+    tool_registry::{all_providers, all_tools},
 };
 
 #[tauri::command]
@@ -21,6 +21,11 @@ pub fn get_dashboard_snapshot(state: State<'_, AppState>) -> Result<DashboardSna
 #[tauri::command]
 pub fn list_builtin_tools() -> Vec<ToolManifest> {
     all_tools()
+}
+
+#[tauri::command]
+pub fn list_api_providers() -> Vec<ApiProvider> {
+    all_providers()
 }
 
 #[tauri::command]
