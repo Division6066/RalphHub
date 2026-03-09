@@ -1,6 +1,7 @@
 mod commands;
 mod models;
 mod orchestrator;
+mod provider_registry;
 mod state;
 mod tool_registry;
 mod workflow;
@@ -23,6 +24,15 @@ pub fn run() {
         .plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
 
       let state = AppState::init(app.handle()).expect("failed to initialize RalphHub state");
+
+      // Seed default providers after DB init
+      {
+        let conn = rusqlite::Connection::open(&state.paths.database_path)
+          .expect("failed to open database for seeding");
+        provider_registry::seed_default_providers(&conn)
+          .expect("failed to seed default providers");
+      }
+
       app.manage(state);
 
       Ok(())
@@ -34,6 +44,22 @@ pub fn run() {
       commands::get_secure_store_config,
       commands::list_builtin_tools,
       commands::open_in_code,
+      // Provider registry
+      commands::list_providers_cmd,
+      commands::create_provider_cmd,
+      commands::update_provider_cmd,
+      commands::delete_provider_cmd,
+      commands::search_providers_cmd,
+      // API usage / memory spine
+      commands::log_api_usage_cmd,
+      commands::list_usage_logs_cmd,
+      commands::get_memory_spine_stats_cmd,
+      commands::list_memory_entries_cmd,
+      // Kaizen tasks
+      commands::create_kaizen_task_cmd,
+      commands::list_kaizen_tasks_cmd,
+      commands::update_kaizen_task_status_cmd,
+      // Orchestration
       orchestrator::deploy_to_colab,
       orchestrator::deploy_to_pc,
       orchestrator::inject_keys,
