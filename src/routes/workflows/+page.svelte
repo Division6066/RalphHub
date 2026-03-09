@@ -12,6 +12,14 @@
 		getProviderForTool,
 		providersStore
 	} from '$lib/utils/provider-registry';
+	import {
+		startParallelWorkflow,
+		loadCcSettings,
+		ccSettingsStore,
+		ccTasksStore,
+		ccRunningTasksStore
+	} from '$lib/utils/computer-control';
+	import PermissionModal from '$lib/components/PermissionModal.svelte';
 
 	type ToolManifest = {
 		id: string;
@@ -51,15 +59,68 @@
 
 	$: activeProvider = $providersStore.find((p) => p.id === $activeProviderIdStore);
 
+	// ─── Computer Control Integration ────────────────────────────────────────────
+	let ccQuickGoal = '';
+	let ccQuickMode: 'supervised' | 'autonomous' = 'supervised';
+	let ccLaunchStatus = '';
+	let launchingCcTask = false;
+
 	onMount(async () => {
 		// Load providers for injection
 		await loadProviders();
+		await loadCcSettings();
 
 		if (!isDesktopRuntime()) return;
 
 		tools = await invokeTauri<ToolManifest[]>('list_builtin_tools');
 		runs = await invokeTauri<WorkflowRun[]>('list_workflow_runs');
 	});
+
+	async function launchCcTaskFromWorkflow() {
+		if (!ccQuickGoal) return;
+		launchingCcTask = true;
+		ccLaunchStatus = '';
+		try {
+			// Use startParallelWorkflow to integrate with the workflow system
+			await startParallelWorkflow(
+				`Workflow Agent: ${ccQuickGoal.slice(0, 40)}`,
+				'Continue current workflow',
+				[ccQuickGoal]
+			);
+			ccLaunchStatus = `✓ Computer control task launched`;
+
+			// Log to Memory Spine
+			if ($activeProviderIdStore && $activeModelStore) {
+				await logApiUsage({
+					providerId: $activeProviderIdStore,
+					providerName: 'computer-control',
+					model: $activeModelStore,
+					tokensIn: 0,
+					tokensOut: 0,
+					costUsd: 0,
+					outputSummary: `CC Agent launched: ${ccQuickGoal.slice(0, 100)}`,
+					toolId: 'computer-control',
+					workflowId: 'cc-workflow-launch'
+				});
+			}
+
+			// Auto-create Kaizen task
+			await createKaizenTask({
+				title: `[CC Agent] ${ccQuickGoal.slice(0, 60)}`,
+				description: `Computer control task: ${ccQuickGoal}`,
+				priority: 'high',
+				source: 'workflow-composer-cc',
+				providerId: $activeProviderIdStore,
+				usageLogId: ''
+			});
+
+			ccQuickGoal = '';
+		} catch (e) {
+			ccLaunchStatus = `✗ ${e instanceof Error ? e.message : 'Failed'}`;
+		} finally {
+			launchingCcTask = false;
+		}
+	}
 
 	async function createWorkflow() {
 		if (!isDesktopRuntime()) {
@@ -123,6 +184,9 @@
 			: [...selectedTools, toolId];
 	}
 </script>
+
+<!-- Permission Modal -->
+<PermissionModal />
 
 <section class="space-y-6">
 	<div class="rounded-[2rem] border border-violet-400/20 bg-slate-950/55 p-8 shadow-2xl shadow-violet-950/20 backdrop-blur">
@@ -228,6 +292,66 @@
 				</button>
 				<p class="text-sm text-slate-400">{workflowStatus}</p>
 			</div>
+		</div>
+	</div>
+
+	<!-- ─── Computer Control Quick Launch ─────────────────────────────────── -->
+	<div class="rounded-3xl border border-violet-400/20 bg-violet-950/15 p-6 backdrop-blur space-y-4">
+		<div class="flex items-center justify-between">
+			<h2 class="text-lg font-semibold text-violet-200">🖥️ Computer Control Quick Launch</h2>
+			<div class="flex items-center gap-2">
+				{#if $ccRunningTasksStore.length > 0}
+					<span class="rounded-full bg-cyan-500/20 border border-cyan-400/30 px-3 py-1 text-xs text-cyan-300">
+						{$ccRunningTasksStore.length} running
+					</span>
+				{/if}
+				<a href="/computer-control" class="text-xs text-violet-400 hover:text-violet-300 underline">
+					Full panel →
+				</a>
+			</div>
+		</div>
+		<p class="text-sm text-slate-400">
+			Launch a background agent task from any workflow. Automatically logs to Memory Spine + creates Kaizen task.
+		</p>
+		<div class="space-y-3">
+			<div>
+				<label class="block text-xs font-medium text-slate-400 mb-1.5">Agent Goal</label>
+				<textarea
+					bind:value={ccQuickGoal}
+					placeholder="While I continue this workflow, do my taxes in Excel and update the project tracker in Notion…"
+					rows="3"
+					class="w-full rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none focus:border-violet-400/40 resize-none"
+				></textarea>
+			</div>
+			<div class="flex items-center gap-3">
+				{#each ['supervised', 'autonomous'] as m}
+					<button
+						type="button"
+						on:click={() => (ccQuickMode = m as 'supervised' | 'autonomous')}
+						class="rounded-xl px-4 py-2 text-xs font-medium border transition-colors
+							{ccQuickMode === m
+							? (m === 'supervised' ? 'bg-amber-400/20 text-amber-200 border-amber-400/30' : 'bg-violet-400/20 text-violet-200 border-violet-400/30')
+							: 'bg-slate-800 text-slate-500 border-transparent'}"
+					>
+						{m === 'supervised' ? '👁 Supervised' : '🤖 Autonomous'}
+					</button>
+				{/each}
+
+				<button
+					type="button"
+					on:click={launchCcTaskFromWorkflow}
+					disabled={launchingCcTask || !ccQuickGoal || !$ccSettingsStore?.enabled}
+					class="rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow disabled:opacity-60"
+				>
+					{launchingCcTask ? 'Launching…' : '🚀 Launch in Background'}
+				</button>
+				{#if !$ccSettingsStore?.enabled}
+					<a href="/computer-control" class="text-xs text-amber-400 hover:text-amber-300 underline">Enable CC first</a>
+				{/if}
+			</div>
+			{#if ccLaunchStatus}
+				<p class="text-sm {ccLaunchStatus.startsWith('✓') ? 'text-green-400' : 'text-rose-400'}">{ccLaunchStatus}</p>
+			{/if}
 		</div>
 	</div>
 

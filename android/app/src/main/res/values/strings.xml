@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AmitOS Panda</string>
+    <string name="panda_service_description">Panda Agent — AmitOS computer control for Android. Allows the AmitOS AI agent to read your screen and perform actions on your behalf. Enable in supervised or autonomous mode. Kill switch always available.</string>
+    <string name="panda_permission_title">Panda Agent Permission Required</string>
+    <string name="panda_permission_message">The AmitOS agent wants to perform: %s\n\nRisk level: %s\n\nAllow this action?</string>
+    <string name="allow">Allow</string>
+    <string name="deny">Deny</string>
+    <string name="kill_switch_label">Emergency Kill Switch</string>
+    <string name="kill_switch_description">Immediately halt all Panda agent actions</string>
+</resources>

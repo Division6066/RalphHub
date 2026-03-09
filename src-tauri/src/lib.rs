@@ -1,4 +1,5 @@
 mod commands;
+mod computer_control;
 mod models;
 mod orchestrator;
 mod provider_registry;
@@ -6,6 +7,7 @@ mod state;
 mod tool_registry;
 mod workflow;
 
+use computer_control::ComputerControlState;
 use state::AppState;
 use tauri::Manager;
 
@@ -34,6 +36,7 @@ pub fn run() {
       }
 
       app.manage(state);
+      app.manage(ComputerControlState::new());
 
       Ok(())
     })
@@ -66,6 +69,19 @@ pub fn run() {
       orchestrator::list_managed_projects,
       workflow::create_workflow_run,
       workflow::list_workflow_runs,
+      // Computer Control (Vy-style desktop + Android Panda)
+      computer_control::cc_take_screenshot,
+      computer_control::cc_execute_action,
+      computer_control::cc_start_agent_task,
+      computer_control::cc_stop_agent_task,
+      computer_control::cc_list_agent_tasks,
+      computer_control::cc_get_task_status,
+      computer_control::cc_get_settings,
+      computer_control::cc_save_settings,
+      computer_control::cc_toggle_kill_switch,
+      computer_control::cc_start_parallel_workflow,
+      computer_control::cc_list_parallel_workflows,
+      computer_control::cc_get_android_panda_status,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
