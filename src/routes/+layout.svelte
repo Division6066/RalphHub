@@ -8,7 +8,8 @@
 		{ href: '/deploy', label: 'Deploy' },
 		{ href: '/tools', label: 'Tools' },
 		{ href: '/workflows', label: 'Workflows' },
-		{ href: '/settings', label: 'Settings' }
+		{ href: '/settings', label: 'Settings' },
+		{ href: '/mobile-download', label: 'Mobile ↗' },
 	];
 
 	let { children } = $props();
@@ -46,9 +47,9 @@
 			</nav>
 
 			<div class="mt-auto rounded-2xl border border-cyan-400/20 bg-cyan-400/8 p-4 text-sm text-slate-300">
-				<p class="font-medium text-cyan-100">Bootstrap in progress</p>
+				<p class="font-medium text-cyan-100">Mobile Companion Ready</p>
 				<p class="mt-2 leading-6 text-slate-400">
-					Next: secure keys, deploy flows, tool orchestration, and workflow chaining.
+					APK + Memory Spine + encrypted sync. Scan QR in Mobile ↗ to connect phone.
 				</p>
 			</div>
 		</aside>
