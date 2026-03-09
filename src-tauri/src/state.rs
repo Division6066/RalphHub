@@ -9,11 +9,13 @@ use rusqlite::{params, Connection};
 use tauri::{AppHandle, Manager};
 
 use crate::models::{BunStatus, DashboardSnapshot, WorkspacePaths};
+use crate::process_manager::{new_registry, ProcessRegistry};
 use crate::tool_registry::all_tools;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub paths: RalphPaths,
+    pub process_registry: ProcessRegistry,
 }
 
 #[derive(Debug, Clone)]
@@ -47,7 +49,10 @@ impl AppState {
         paths.ensure_directories()?;
         initialize_database(&paths.database_path)?;
 
-        Ok(Self { paths })
+        Ok(Self {
+            paths,
+            process_registry: new_registry(),
+        })
     }
 
     pub fn snapshot(&self) -> Result<DashboardSnapshot> {
