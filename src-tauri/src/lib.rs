@@ -1,9 +1,11 @@
 mod commands;
+mod computer_agent;
 mod models;
 mod orchestrator;
 mod provider_registry;
 mod state;
 mod tool_registry;
+mod voice_assistant;
 mod workflow;
 
 use state::AppState;
@@ -31,6 +33,12 @@ pub fn run() {
           .expect("failed to open database for seeding");
         provider_registry::seed_default_providers(&conn)
           .expect("failed to seed default providers");
+
+        // Run computer agent + voice assistant migrations
+        computer_agent::run_migrations(&conn)
+          .expect("failed to run computer_agent migrations");
+        voice_assistant::run_migrations(&conn)
+          .expect("failed to run voice_assistant migrations");
       }
 
       app.manage(state);
@@ -66,6 +74,35 @@ pub fn run() {
       orchestrator::list_managed_projects,
       workflow::create_workflow_run,
       workflow::list_workflow_runs,
+      // ── Milestone 1 & 2: Computer Agent + Parallel Execution ──
+      computer_agent::start_agent_session,
+      computer_agent::list_agent_sessions,
+      computer_agent::stop_agent_session,
+      computer_agent::execute_agent_action,
+      computer_agent::list_session_actions,
+      // ── Milestone 2: Parallel Tasks ──
+      computer_agent::create_parallel_task,
+      computer_agent::list_parallel_tasks,
+      computer_agent::update_parallel_task_status,
+      // ── Milestone 3: Android / Panda ──
+      computer_agent::list_android_devices,
+      computer_agent::execute_adb_command,
+      computer_agent::install_panda_apk,
+      // ── Milestone 5: Remote Permissions ──
+      computer_agent::request_permission,
+      computer_agent::resolve_permission,
+      computer_agent::list_permission_requests,
+      // ── Milestone 6: VPS / RPi Nodes ──
+      computer_agent::deploy_remote_node,
+      computer_agent::list_remote_nodes,
+      // ── Milestone 4: Voice / Chat ──
+      voice_assistant::send_chat_message,
+      voice_assistant::list_chat_sessions,
+      voice_assistant::list_chat_messages,
+      // ── Milestone 5: Push Notifications ──
+      voice_assistant::create_push_notification,
+      voice_assistant::list_push_notifications,
+      voice_assistant::mark_notification_read,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -38,6 +38,61 @@
 		'claudia consolidates memory → Kaizen tasks'
 	];
 
+	// Milestone 8: Example parallel workflow
+	const parallelWorkflowExample = {
+		title: 'Mega Example: Taxes + Notion + Phone Chat',
+		description: 'While you watch a tutorial, AmitOS handles everything in parallel across all your devices.',
+		steps: [
+			{ device: 'desktop', icon: '🖥️', task: 'Vy agent opens Excel, fills W2 data from prior year PDF, calculates deductions, saves to taxes-2025.xlsx' },
+			{ device: 'desktop', icon: '🖥️', task: 'Second agent thread updates Notion workspace — marks Q1 projects done, adds new tasks' },
+			{ device: 'android', icon: '📱', task: 'Panda agent on phone reads incoming WhatsApp messages, drafts replies for your approval' },
+			{ device: 'vps', icon: '☁️', task: 'VPS node runs overnight data pipeline — fetches bank CSV, categorizes expenses, generates summary' },
+			{ device: 'voice', icon: '🎙️', task: 'You\'re out — say "approve the tax deduction" via voice, AmitOS relays to desktop agent instantly' },
+			{ device: 'memory', icon: '🧠', task: 'ALL actions auto-logged to Memory Spine + Kaizen tasks created for review' }
+		]
+	};
+
+	let parallelRunning = false;
+	let parallelLog: string[] = [];
+	let parallelDone = false;
+
+	async function runParallelDemo() {
+		parallelRunning = true;
+		parallelLog = [];
+		parallelDone = false;
+
+		const log = (msg: string) => { parallelLog = [...parallelLog, `[${new Date().toLocaleTimeString()}] ${msg}`]; };
+
+		log('🚀 Starting parallel workflow demo...');
+
+		for (const step of parallelWorkflowExample.steps) {
+			await new Promise((r) => setTimeout(r, 800));
+			log(`${step.icon} [${step.device.toUpperCase()}] ${step.task}`);
+
+			if (isDesktopRuntime()) {
+				try {
+					await createKaizenTask({
+						title: `Parallel task: ${step.task.slice(0, 60)}`,
+						description: step.task,
+						priority: 'normal',
+						source: 'parallel-workflow-demo',
+						providerId: 'computer-agent',
+						usageLogId: ''
+					});
+				} catch { /* ignore */ }
+			}
+		}
+
+		await new Promise((r) => setTimeout(r, 800));
+		log('');
+		log('═══════════════════════════════════════════════════════');
+		log('  VY + PANDA + VOICE + REMOTE CONTROL COMPLETE');
+		log('  AmitOS now has full takeover on every device');
+		log('═══════════════════════════════════════════════════════');
+		parallelDone = true;
+		parallelRunning = false;
+	}
+
 	let tools: ToolManifest[] = [];
 	let selectedTools: string[] = ['perplexica', 'llm-council', 'get-shit-done'];
 	let workflowName = 'Universal Ralph Chain';
@@ -252,5 +307,52 @@
 				{/each}
 			{/if}
 		</div>
+	</div>
+
+	<!-- Milestone 8: Example Parallel Workflow Demo -->
+	<div class="rounded-3xl border {parallelDone ? 'border-violet-400/30 bg-violet-500/5' : 'border-white/10 bg-slate-950/45'} p-6 backdrop-blur">
+		<div class="flex items-start justify-between gap-4 flex-wrap">
+			<div class="flex-1">
+				<h2 class="text-lg font-semibold text-white">Milestone 8: {parallelWorkflowExample.title}</h2>
+				<p class="mt-2 text-sm text-slate-400">{parallelWorkflowExample.description}</p>
+			</div>
+			<button
+				type="button"
+				on:click={runParallelDemo}
+				disabled={parallelRunning}
+				class="rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 disabled:opacity-60 whitespace-nowrap"
+			>
+				{parallelRunning ? '⟳ Running...' : parallelDone ? '✓ Re-run Demo' : '▶ Run Parallel Demo'}
+			</button>
+		</div>
+
+		<!-- Steps grid -->
+		<div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+			{#each parallelWorkflowExample.steps as step}
+				<div class="rounded-2xl border border-white/8 bg-white/3 p-4">
+					<div class="flex items-center gap-2 mb-2">
+						<span class="text-xl">{step.icon}</span>
+						<span class="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-slate-400">{step.device}</span>
+					</div>
+					<p class="text-xs text-slate-400 leading-5">{step.task}</p>
+				</div>
+			{/each}
+		</div>
+
+		<!-- Live log -->
+		{#if parallelLog.length > 0}
+			<div class="mt-5 rounded-2xl bg-slate-950/80 p-4 font-mono text-xs space-y-1 max-h-64 overflow-y-auto border border-white/5">
+				{#each parallelLog as line}
+					<p class="{line.includes('COMPLETE') || line.includes('═') ? 'text-violet-300 font-bold' : line.includes('🚀') ? 'text-cyan-300' : 'text-slate-400'}">{line}</p>
+				{/each}
+			</div>
+		{/if}
+
+		{#if parallelDone}
+			<div class="mt-4 rounded-2xl border border-violet-400/30 bg-violet-500/5 p-5 text-center">
+				<p class="text-lg font-bold text-white">VY + PANDA + VOICE + REMOTE CONTROL COMPLETE</p>
+				<p class="mt-2 text-sm text-slate-400">AmitOS now has full takeover on every device</p>
+			</div>
+		{/if}
 	</div>
 </section>
