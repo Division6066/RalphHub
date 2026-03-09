@@ -13,6 +13,7 @@
 		{ href: '/deploy', label: 'Deploy', icon: '🚀', emoji: true },
 		{ href: '/settings', label: 'API Keys', icon: '🔑', emoji: true },
 		{ href: '/voice', label: 'Voice', icon: '🎙️', emoji: true },
+		{ href: '/mcp', label: 'MCP', icon: '⚡', emoji: true },
 		{ href: '/mobile', label: 'Mobile', icon: '📱', emoji: true }
 	];
 
