@@ -12,7 +12,7 @@ use crate::{
     models::{
         ApiUsageLog, CommandResponse, CreateKaizenTaskRequest, CreateProviderRequest,
         DashboardSnapshot, KaizenTask, LaunchBackgroundRequest, LogApiUsageRequest,
-        MemorySpineEntry, MemorySpineStats, ParallelToolConfig, ParallelWorkflowRequest,
+        MemorySpineEntry, MemorySpineStats, ParallelWorkflowRequest,
         ParallelWorkflowResult, Provider, SecureStoreConfig, ToolLogsResult, ToolManifest,
         ToolProcessStatus, UpdateProviderRequest, VoiceCommandRequest, VoiceCommandResult,
     },

@@ -10,6 +10,7 @@
 		{ href: '/', label: 'Dashboard' },
 		{ href: '/deploy', label: 'Deploy' },
 		{ href: '/tools', label: 'Tools' },
+		{ href: '/parallel', label: '⚡ Parallel' },
 		{ href: '/workflows', label: 'Workflows' },
 		{ href: '/settings', label: 'Providers & Settings' }
 	];
