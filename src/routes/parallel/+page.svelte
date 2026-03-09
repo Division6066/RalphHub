@@ -627,6 +627,42 @@
 		</div>
 	</div>
 
+	<!-- Example workflow reference -->
+	<div class="rounded-3xl border border-cyan-400/15 bg-slate-950/45 p-6 backdrop-blur">
+		<h2 class="text-base font-semibold text-white mb-2">📖 Example: Code Feature + Edit Demo Video</h2>
+		<p class="text-sm text-slate-400 mb-4">
+			The canonical parallel workflow: Superpowers dispatches parallel sub-agents to implement a feature using mandatory TDD (brainstorm → plan → execute → review), while Diffusionstudio Agent edits the product demo video in background via Vy/Panda computer control.
+		</p>
+		<div class="grid gap-3 sm:grid-cols-2">
+			<div class="rounded-2xl border border-violet-400/15 bg-violet-950/20 p-4">
+				<p class="text-xs font-bold text-violet-300 mb-2">⚡ Superpowers Agent</p>
+				<ol class="space-y-1 text-xs text-slate-400 list-decimal list-inside">
+					<li>Brainstorm: generate solution approaches</li>
+					<li>Plan: decompose into TDD tasks</li>
+					<li>Execute: dispatch parallel sub-agents per task</li>
+					<li>Review: aggregate, test, commit</li>
+					<li>Write evidence → Memory Spine</li>
+					<li>Create Kaizen task for each milestone</li>
+				</ol>
+			</div>
+			<div class="rounded-2xl border border-pink-400/15 bg-pink-950/20 p-4">
+				<p class="text-xs font-bold text-pink-300 mb-2">🎬 Diffusionstudio Agent</p>
+				<ol class="space-y-1 text-xs text-slate-400 list-decimal list-inside">
+					<li>Receive video task from voice/workflow</li>
+					<li>Semantic search: find relevant doc clips</li>
+					<li>Vy/Panda: control editor in background</li>
+					<li>AI composition: assemble scenes</li>
+					<li>Render: output to logs/video-output/</li>
+					<li>Write evidence → Memory Spine</li>
+				</ol>
+			</div>
+		</div>
+		<div class="mt-4 rounded-2xl border border-white/8 bg-black/30 p-3">
+			<p class="text-xs font-mono text-slate-400 mb-1"># Run the example workflow directly with Bun:</p>
+			<p class="text-xs font-mono text-cyan-300">bun run examples/parallel-workflow.ts</p>
+		</div>
+	</div>
+
 	<!-- Past parallel workflow runs -->
 	{#if pastWorkflows.length > 0}
 		<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
