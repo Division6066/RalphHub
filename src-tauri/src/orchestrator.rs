@@ -58,7 +58,7 @@ pub fn deploy_to_pc(
 ) -> Result<DeployResult, String> {
     if !detect_bun_status().installed {
         return Err(
-            "Bun is not installed yet. Run the Bun installer from RalphHub before deploying."
+            "Bun is not installed yet. Run the Bun installer from AmitOS before deploying."
                 .to_string(),
         );
     }
@@ -86,7 +86,7 @@ pub fn deploy_to_pc(
 
     if !workspace.join("package.json").exists() {
         return Err(
-            "This repository does not contain a package.json. RalphHub will not fall back to npm."
+            "This repository does not contain a package.json. AmitOS will not fall back to npm."
                 .to_string(),
         );
     }
@@ -143,7 +143,7 @@ pub fn deploy_to_colab(
         fs::write(
             &state_path,
             format!(
-                "# RalphHub Colab State\n\n- Repo: {normalized_url}\n- Generated: {}\n",
+                "# AmitOS Colab State\n\n- Repo: {normalized_url}\n- Generated: {}\n",
                 Utc::now().to_rfc3339()
             ),
         )
@@ -188,7 +188,7 @@ pub fn deploy_to_colab(
                 "cell_type": "code",
                 "metadata": {},
                 "source": [
-                    "# Fill these values with the same keys saved in RalphHub Settings before running.\n",
+                    "# Fill these values with the same keys saved in AmitOS Settings before running.\n",
                     "ANTHROPIC_API_KEY = ''\n",
                     "OPENAI_API_KEY = ''\n",
                     "GROK_API_KEY = ''\n",
@@ -308,7 +308,7 @@ fn ensure_state_file(workspace: &Path) -> Result<PathBuf, String> {
     if !path.exists() {
         fs::write(
             &path,
-            "# RalphHub State\n\n- Status: initialized\n- Next step: update this file from the active workflow.\n",
+            "# AmitOS State\n\n- Status: initialized\n- Next step: update this file from the active workflow.\n",
         )
         .map_err(|error| error.to_string())?;
     }

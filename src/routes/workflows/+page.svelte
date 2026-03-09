@@ -1,22 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { invokeTauri, isDesktopRuntime } from '$lib/utils/desktop';
-	import ModelSwitcher from '$lib/components/ModelSwitcher.svelte';
-	import {
-		loadProviders,
-		activeProviderIdStore,
-		activeModelStore,
-		logApiUsage,
-		createKaizenTask,
-		enabledProvidersStore,
-		getProviderForTool,
-		providersStore
-	} from '$lib/utils/provider-registry';
 
 	type ToolManifest = {
 		id: string;
 		name: string;
-		requiredKeys: string[];
+		category: string;
+		repoUrl: string;
+		tags: string[];
 	};
 
 	type WorkflowRun = {
@@ -26,231 +17,269 @@
 		configPath: string;
 		statePath: string;
 		status: string;
+		createdAt: string;
 	};
 
-	const flow = [
-		'Firecrawl researches web sources',
-		'Perplexica searches and filters',
-		'llm-council votes on best approach',
-		'get-shit-done executes via selected model',
-		'Fal.ai generates output assets',
-		'vibe-kanban updates board',
-		'claudia consolidates memory → Kaizen tasks'
+	const PRESET_CHAINS = [
+		{
+			name: 'Deep Research Loop',
+			icon: '🔬',
+			desc: 'Perplexica searches → AutoResearch iterates → Memory Spine saves',
+			tools: ['perplexica', 'autoresearch', 'memory-spine'],
+			model: 'anthropic/claude-sonnet-4-5',
+			color: 'violet'
+		},
+		{
+			name: 'Full Coding Agent',
+			icon: '💻',
+			desc: 'OpenHands plans → Aider implements → get-shit-done ships',
+			tools: ['open-hands', 'aider', 'get-shit-done'],
+			model: 'anthropic/claude-sonnet-4-5',
+			color: 'cyan'
+		},
+		{
+			name: 'Web Scrape + Analyze',
+			icon: '🌐',
+			desc: 'Playwright MCP browses → Firecrawl extracts → LiteLLM analyzes',
+			tools: ['playwright-mcp', 'firecrawl', 'litellm'],
+			model: 'openai/gpt-4o',
+			color: 'blue'
+		},
+		{
+			name: 'Multi-Model Council',
+			icon: '🧠',
+			desc: 'LLM Council votes across GPT-4o + Claude + Gemini on hard decisions',
+			tools: ['llm-council', 'litellm'],
+			model: 'council/all',
+			color: 'purple'
+		},
+		{
+			name: 'Overnight Kaizen',
+			icon: '♾️',
+			desc: 'Analyze Kaizen backlog → decompose tasks → write memory → notify',
+			tools: ['memory-spine', 'universal-ai-loop'],
+			model: 'anthropic/claude-sonnet-4-5',
+			color: 'amber'
+		},
+	];
+
+	const ALL_MODELS = [
+		'anthropic/claude-sonnet-4-5',
+		'anthropic/claude-opus-4-5',
+		'anthropic/claude-haiku-3-5',
+		'openai/gpt-4o',
+		'openai/gpt-4o-mini',
+		'openai/o1',
+		'openai/o3-mini',
+		'google/gemini-1.5-pro',
+		'google/gemini-1.5-flash',
+		'xai/grok-2',
+		'deepseek/deepseek-r1',
+		'mistral/mistral-large',
+		'groq/llama-3.3-70b',
+		'council/all',
+		'local/ollama',
 	];
 
 	let tools: ToolManifest[] = [];
-	let selectedTools: string[] = ['perplexica', 'llm-council', 'get-shit-done'];
-	let workflowName = 'Universal Ralph Chain';
-	let workflowStatus = 'Ready to compose a workflow.';
 	let runs: WorkflowRun[] = [];
-	let creatingWorkflow = false;
-
-	$: activeModelDisplay = $activeModelStore
-		? `${$activeModelStore}`
-		: 'No model selected';
-
-	$: activeProvider = $providersStore.find((p) => p.id === $activeProviderIdStore);
+	let loading = true;
+	let selectedTools: string[] = [];
+	let workflowName = 'My AI Workflow';
+	let modelName = 'anthropic/claude-sonnet-4-5';
+	let workflowDesc = '';
+	let status = '';
+	let isDesktop = false;
 
 	onMount(async () => {
-		// Load providers for injection
-		await loadProviders();
-
-		if (!isDesktopRuntime()) return;
-
-		tools = await invokeTauri<ToolManifest[]>('list_builtin_tools');
-		runs = await invokeTauri<WorkflowRun[]>('list_workflow_runs');
+		isDesktop = isDesktopRuntime();
+		if (!isDesktop) { loading = false; return; }
+		try {
+			[tools, runs] = await Promise.all([
+				invokeTauri<ToolManifest[]>('list_builtin_tools'),
+				invokeTauri<WorkflowRun[]>('list_workflow_runs')
+			]);
+		} catch (e) { status = String(e); }
+		finally { loading = false; }
 	});
 
 	async function createWorkflow() {
-		if (!isDesktopRuntime()) {
-			workflowStatus = 'Workflow preparation is available in the RalphHub desktop runtime.';
+		if (!workflowName.trim() || !selectedTools.length) {
+			status = 'Enter a name and select at least one tool.';
 			return;
 		}
-
-		if (!$activeModelStore) {
-			workflowStatus = 'Please select a model using the model switcher above.';
-			return;
-		}
-
-		creatingWorkflow = true;
-
+		if (!isDesktop) { status = 'Desktop runtime required.'; return; }
 		try {
 			const run = await invokeTauri<WorkflowRun>('create_workflow_run', {
 				request: {
 					name: workflowName,
-					modelName: `${$activeProviderIdStore}/${$activeModelStore}`,
-					toolIds: selectedTools
+					modelName,
+					toolIds: selectedTools,
+					description: workflowDesc || null
 				}
 			});
-
 			runs = [run, ...runs];
-			workflowStatus = `Workflow prepared. Config: ${run.configPath}`;
-
-			// Log to Memory Spine
-			if ($activeProviderIdStore && $activeModelStore) {
-				await logApiUsage({
-					providerId: $activeProviderIdStore,
-					providerName: activeProvider?.name ?? $activeProviderIdStore,
-					model: $activeModelStore,
-					tokensIn: 0,
-					tokensOut: 0,
-					costUsd: 0,
-					outputSummary: `Workflow "${workflowName}" created with tools: ${selectedTools.join(', ')}`,
-					toolId: 'workflow-composer',
-					workflowId: run.id
-				});
-			}
-
-			// Auto-create Kaizen task
-			await createKaizenTask({
-				title: `Run workflow: ${workflowName}`,
-				description: `Tools: ${selectedTools.join(', ')} | Model: ${$activeModelStore}`,
-				priority: 'normal',
-				source: 'workflow-composer',
-				providerId: $activeProviderIdStore,
-				usageLogId: ''
-			});
-		} catch (error) {
-			workflowStatus = error instanceof Error ? error.message : 'Failed to create workflow.';
-		} finally {
-			creatingWorkflow = false;
+			status = `✓ Workflow created. Config: ${run.configPath}`;
+		} catch (e) {
+			status = String(e);
 		}
 	}
 
-	function toggleTool(toolId: string) {
-		selectedTools = selectedTools.includes(toolId)
-			? selectedTools.filter((id) => id !== toolId)
-			: [...selectedTools, toolId];
+	function applyPreset(preset: typeof PRESET_CHAINS[0]) {
+		workflowName = preset.name;
+		modelName = preset.model;
+		selectedTools = preset.tools;
+		workflowDesc = preset.desc;
+		status = `Preset "${preset.name}" loaded. Customize and create.`;
 	}
+
+	function toggleTool(id: string) {
+		selectedTools = selectedTools.includes(id)
+			? selectedTools.filter((t) => t !== id)
+			: [...selectedTools, id];
+	}
+
+	function formatDate(iso: string) {
+		return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+	}
+
+	const colorClass = (c: string) => {
+		const m: Record<string, string> = {
+			violet: 'border-violet-400/20 bg-violet-400/8 hover:border-violet-400/40',
+			cyan: 'border-cyan-400/20 bg-cyan-400/8 hover:border-cyan-400/40',
+			blue: 'border-blue-400/20 bg-blue-400/8 hover:border-blue-400/40',
+			purple: 'border-purple-400/20 bg-purple-400/8 hover:border-purple-400/40',
+			amber: 'border-amber-400/20 bg-amber-400/8 hover:border-amber-400/40',
+		};
+		return m[c] ?? 'border-white/10 bg-white/5';
+	};
 </script>
 
-<section class="space-y-6">
-	<div class="rounded-[2rem] border border-violet-400/20 bg-slate-950/55 p-8 shadow-2xl shadow-violet-950/20 backdrop-blur">
-		<p class="text-sm uppercase tracking-[0.35em] text-violet-200/80">Workflows</p>
-		<h1 class="mt-4 text-4xl font-semibold tracking-tight text-white">Compose a universal multi-tool Ralph loop.</h1>
-		<p class="mt-4 max-w-3xl text-base leading-7 text-slate-300">
-			Every workflow auto-injects keys from the Provider Registry, logs all API usage to Memory Spine, and creates Kaizen tasks automatically.
-		</p>
+<section class="space-y-5">
+	<!-- Header -->
+	<div class="rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-950/50 via-slate-950/80 to-purple-950/30 p-7 backdrop-blur">
+		<p class="text-xs uppercase tracking-[0.3em] text-violet-300/70">Multi-Tool Orchestration</p>
+		<h1 class="mt-2 text-3xl font-bold text-white">⚡ Workflows</h1>
+		<p class="mt-2 text-sm text-slate-400">Chain AI tools into overnight loops. Research → Code → Memory → Notify.</p>
+	</div>
 
-		<!-- Model Switcher at top level -->
-		<div class="mt-6 flex items-center gap-3 flex-wrap">
-			<span class="text-sm text-slate-400">Active model:</span>
-			<ModelSwitcher />
-			{#if $enabledProvidersStore.length > 0}
-				<span class="text-xs text-slate-500">{$enabledProvidersStore.length} providers connected</span>
-			{:else}
-				<a href="/settings" class="text-xs text-amber-400 hover:text-amber-300 underline">
-					No providers connected — go to Settings →
-				</a>
-			{/if}
+	<!-- Preset chains -->
+	<div>
+		<h2 class="mb-3 text-sm font-bold text-slate-300">Quick-Start Presets</h2>
+		<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+			{#each PRESET_CHAINS as preset}
+				<button
+					onclick={() => applyPreset(preset)}
+					class={`rounded-xl border p-4 text-left transition ${colorClass(preset.color)}`}
+				>
+					<p class="text-lg mb-1.5">{preset.icon}</p>
+					<p class="text-sm font-bold text-white">{preset.name}</p>
+					<p class="mt-1.5 text-xs text-slate-400 leading-5">{preset.desc}</p>
+					<div class="mt-2.5 flex flex-wrap gap-1">
+						{#each preset.tools as t}
+							<span class="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-slate-400">{t}</span>
+						{/each}
+					</div>
+				</button>
+			{/each}
 		</div>
 	</div>
 
-	<div class="grid gap-4 lg:grid-cols-[1.25fr_0.9fr]">
-		<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-			<h2 class="text-lg font-semibold text-white">Universal Ralph chain with provider injection</h2>
-			<div class="mt-6 space-y-2">
-				{#each flow as step, index}
-					<div class="flex items-center gap-4 rounded-2xl border border-white/6 bg-white/3 p-3">
-						<div class="flex h-7 w-7 items-center justify-center rounded-full bg-violet-400/15 text-xs font-semibold text-violet-100 flex-shrink-0">
-							{index + 1}
+	<!-- Composer -->
+	<div class="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
+		<!-- Tool selector -->
+		<div class="rounded-2xl border border-white/8 bg-slate-950/50 p-5 backdrop-blur">
+			<h2 class="mb-4 text-sm font-bold text-white">Select Tools ({selectedTools.length} selected)</h2>
+			<div class="max-h-80 overflow-y-auto space-y-1.5 pr-1">
+				{#each tools.filter(t => !t.repoUrl.startsWith('internal://') || ['memory-spine', 'universal-ai-loop'].includes(t.id)) as tool}
+					<label class={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition ${selectedTools.includes(tool.id) ? 'border-violet-400/30 bg-violet-400/10' : 'border-white/5 bg-white/2 hover:border-white/10'}`}>
+						<input type="checkbox" checked={selectedTools.includes(tool.id)} onchange={() => toggleTool(tool.id)} class="h-4 w-4 rounded" />
+						<div class="flex-1 min-w-0">
+							<p class="text-sm font-medium text-white truncate">{tool.name}</p>
+							<p class="text-xs text-slate-500">{tool.category}</p>
 						</div>
-						<p class="text-sm text-slate-300">{step}</p>
-					</div>
+					</label>
 				{/each}
 			</div>
+		</div>
 
-			<!-- Provider auto-injection info -->
-			<div class="mt-4 rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-4">
-				<p class="text-xs font-semibold text-cyan-300 mb-2">Auto-Injected Provider Keys</p>
-				{#if $enabledProvidersStore.length === 0}
-					<p class="text-xs text-slate-500">No providers enabled. <a href="/settings" class="text-cyan-400 underline">Enable providers →</a></p>
-				{:else}
-					<div class="flex flex-wrap gap-1">
-						{#each $enabledProvidersStore as p}
-							<span class="rounded-lg bg-slate-800 px-2 py-1 text-xs font-mono text-slate-300">
-								{p.logoEmoji} {p.apiKeyEnv || p.name}
-							</span>
+		<!-- Config + create -->
+		<div class="rounded-2xl border border-white/8 bg-slate-950/50 p-5 backdrop-blur">
+			<h2 class="mb-4 text-sm font-bold text-white">Workflow Config</h2>
+			<div class="space-y-4">
+				<div>
+					<label class="mb-1.5 block text-xs text-slate-400">Name</label>
+					<input bind:value={workflowName} class="w-full rounded-xl border border-white/10 bg-slate-800 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-400" placeholder="My workflow name" />
+				</div>
+				<div>
+					<label class="mb-1.5 block text-xs text-slate-400">Model</label>
+					<select bind:value={modelName} class="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white">
+						{#each ALL_MODELS as m}
+							<option value={m}>{m}</option>
 						{/each}
+					</select>
+				</div>
+				<div>
+					<label class="mb-1.5 block text-xs text-slate-400">Description (optional)</label>
+					<textarea bind:value={workflowDesc} rows="2" class="w-full resize-none rounded-xl border border-white/10 bg-slate-800 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-400"></textarea>
+				</div>
+
+				<!-- Selected tools preview -->
+				{#if selectedTools.length > 0}
+					<div class="rounded-xl border border-violet-400/15 bg-violet-400/8 p-3">
+						<p class="text-xs text-violet-300 font-semibold mb-2">Chain ({selectedTools.length} tools):</p>
+						<div class="flex flex-wrap gap-1.5">
+							{#each selectedTools as toolId, i}
+								<div class="flex items-center gap-1">
+									<span class="rounded-lg bg-violet-400/20 px-2 py-1 text-xs font-medium text-violet-200">{toolId}</span>
+									{#if i < selectedTools.length - 1}
+										<span class="text-slate-600 text-xs">→</span>
+									{/if}
+								</div>
+							{/each}
+						</div>
 					</div>
+				{/if}
+
+				<button
+					onclick={createWorkflow}
+					disabled={!selectedTools.length || !workflowName.trim()}
+					class="w-full rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 py-3 text-sm font-bold text-white shadow-lg disabled:opacity-50 transition hover:from-violet-400 hover:to-purple-400"
+				>
+					⚡ Create Workflow
+				</button>
+				{#if status}
+					<p class="text-xs text-slate-400">{status}</p>
 				{/if}
 			</div>
 		</div>
-
-		<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-			<h2 class="text-lg font-semibold text-white">Workflow composer</h2>
-			<div class="mt-4 space-y-4">
-				<input
-					bind:value={workflowName}
-					class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none focus:border-cyan-400/40"
-					placeholder="Workflow name"
-				/>
-
-				<!-- Inline model switcher -->
-				<div>
-					<label class="block text-xs font-medium text-slate-500 mb-2">Model</label>
-					<ModelSwitcher compact={false} />
-				</div>
-
-				<div class="space-y-2">
-					<label class="block text-xs font-medium text-slate-500">Tools</label>
-					{#each tools as tool}
-						<label class="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/3 px-4 py-3 text-sm text-slate-300 cursor-pointer hover:bg-white/5">
-							<input
-								type="checkbox"
-								checked={selectedTools.includes(tool.id)}
-								on:change={() => toggleTool(tool.id)}
-								class="rounded border-white/20"
-							/>
-							<span class="flex-1">{tool.name}</span>
-							{#if tool.requiredKeys?.length}
-								{@const injected = getProviderForTool($providersStore, tool.requiredKeys)}
-								{#if injected}
-									<span class="text-xs text-green-400">{injected.logoEmoji}</span>
-								{:else}
-									<span class="text-xs text-amber-400" title="No matching key configured">⚠</span>
-								{/if}
-							{/if}
-						</label>
-					{/each}
-					{#if tools.length === 0}
-						<p class="text-sm text-slate-500">Loading tools...</p>
-					{/if}
-				</div>
-
-				<button
-					type="button"
-					on:click={createWorkflow}
-					disabled={creatingWorkflow || !$activeModelStore}
-					class="w-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 px-5 py-3 text-sm font-semibold text-slate-950 disabled:opacity-60 disabled:cursor-not-allowed"
-				>
-					{creatingWorkflow ? 'Creating...' : 'Create Workflow + Log to Memory'}
-				</button>
-				<p class="text-sm text-slate-400">{workflowStatus}</p>
-			</div>
-		</div>
 	</div>
 
-	<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-		<div class="flex items-center justify-between">
-			<h2 class="text-lg font-semibold text-white">Prepared runs</h2>
-			<span class="text-sm text-slate-500">{runs.length} total</span>
+	<!-- Workflow runs history -->
+	<div class="rounded-2xl border border-white/8 bg-slate-950/50 p-5 backdrop-blur">
+		<div class="mb-4 flex items-center justify-between">
+			<h2 class="text-sm font-bold text-white">Run History</h2>
+			<span class="text-xs text-slate-500">{runs.length} runs</span>
 		</div>
-		<div class="mt-6 space-y-3">
-			{#if !runs.length}
-				<p class="text-sm text-slate-500">No workflow runs prepared yet.</p>
-			{:else}
+		{#if loading}
+			<p class="text-sm text-slate-400">Loading…</p>
+		{:else if runs.length === 0}
+			<p class="text-sm text-slate-500">No workflows created yet. Use a preset above to get started.</p>
+		{:else}
+			<div class="space-y-2.5">
 				{#each runs as run}
-					<div class="rounded-2xl border border-white/8 bg-white/3 p-4">
-						<div class="flex items-center justify-between gap-3">
+					<div class="flex items-start justify-between gap-4 rounded-xl border border-white/8 bg-white/3 p-4">
+						<div>
 							<p class="text-sm font-medium text-white">{run.workflowName}</p>
-							<span class="rounded-full bg-slate-800 px-2 py-1 text-xs text-slate-400">{run.modelName}</span>
+							<p class="mt-0.5 text-xs text-slate-500">{run.modelName} · {run.configPath}</p>
+							<p class="mt-0.5 text-xs text-slate-600">{formatDate(run.createdAt)}</p>
 						</div>
-						<p class="mt-1 text-xs text-slate-500 font-mono truncate">{run.configPath}</p>
-						<p class="mt-2 text-xs text-cyan-100">{run.status}</p>
+						<span class={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${run.status === 'prepared' ? 'border-amber-400/20 bg-amber-400/10 text-amber-300' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300'}`}>
+							{run.status}
+						</span>
 					</div>
 				{/each}
-			{/if}
-		</div>
+			</div>
+		{/if}
 	</div>
 </section>
