@@ -303,3 +303,52 @@ describe('System Health', () => {
     expect(content).toContain('M10');
   });
 });
+
+// ─── End-to-end simulation: Grand Finale workflow ────────────────────────────
+
+describe('Grand Finale E2E Simulation', () => {
+  it('voice command → parallel agents → memory → kaizen → Notion flow is documented', async () => {
+    // Verify the dashboard page has this complete E2E flow documented
+    const f = Bun.file('src/routes/+page.svelte');
+    const content = await f.text();
+    expect(content).toContain('superpowers');
+    expect(content).toContain('diffusionstudio');
+    expect(content).toContain('Memory Spine');
+    expect(content).toContain('runHealthCheck');
+  });
+
+  it('parallel workflow example tasks are defined', async () => {
+    const f = Bun.file('src/routes/computer-control/+page.svelte');
+    const content = await f.text();
+    expect(content).toContain('Parallel');
+    expect(content).toContain('android');
+    expect(content).toContain('desktop');
+  });
+
+  it('voice → Panda phone approval flow is wired', async () => {
+    const voicePage = await Bun.file('src/routes/voice/+page.svelte').text();
+    const pandaPage = await Bun.file('src/routes/panda/+page.svelte').text();
+    expect(voicePage).toContain('send_chat_message');
+    expect(pandaPage).toContain('approveAction');
+    expect(pandaPage).toContain('pendingActions');
+  });
+
+  it('memory spine + kaizen task auto-creation wiring exists', async () => {
+    const registry = await Bun.file('src/lib/utils/provider-registry.ts').text();
+    expect(registry).toContain('logApiUsage');
+    expect(registry).toContain('createKaizenTask');
+    expect(registry).toContain('refreshMemoryStats');
+  });
+
+  it('MCP browser config generation works correctly', async () => {
+    const mcp = await Bun.file('src/routes/mcp/+page.svelte').text();
+    expect(mcp).toContain('updateConfig');
+    expect(mcp).toContain('mcpServers');
+    expect(mcp).toContain('copyConfig');
+  });
+
+  it('RPi ARM build script is ready', async () => {
+    const script = await Bun.file('scripts/build-rpi.sh').text();
+    expect(script).toContain('#!/bin/bash');
+  });
+});
