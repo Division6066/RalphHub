@@ -9,7 +9,7 @@ use tauri::State;
 
 use crate::{
     models::{
-        ApiUsageLog, CommandResponse, CreateKaizenTaskRequest, CreateProviderRequest,
+        ApiProvider, ApiUsageLog, CommandResponse, CreateKaizenTaskRequest, CreateProviderRequest,
         DashboardSnapshot, KaizenTask, LogApiUsageRequest, MemorySpineEntry, MemorySpineStats,
         Provider, SecureStoreConfig, ToolManifest, UpdateProviderRequest,
     },
@@ -19,7 +19,7 @@ use crate::{
         search_providers, update_kaizen_task_status, update_provider,
     },
     state::{bun_installer_hint, detect_bun_status, AppState},
-    tool_registry::all_tools,
+    tool_registry::{all_providers, all_tools},
 };
 
 #[tauri::command]
@@ -30,6 +30,11 @@ pub fn get_dashboard_snapshot(state: State<'_, AppState>) -> Result<DashboardSna
 #[tauri::command]
 pub fn list_builtin_tools() -> Vec<ToolManifest> {
     all_tools()
+}
+
+#[tauri::command]
+pub fn list_api_providers() -> Vec<ApiProvider> {
+    all_providers()
 }
 
 #[tauri::command]
@@ -66,7 +71,7 @@ pub fn ensure_bun() -> Result<CommandResponse, String> {
         })
     } else {
         Err(format!(
-            "Bun installation failed. Run {} manually and restart RalphHub.",
+            "Bun installation failed. Run {} manually and restart AmitOS.",
             bun_installer_hint()
         ))
     }
@@ -112,11 +117,11 @@ pub fn get_secure_store_config(state: State<'_, AppState>) -> Result<SecureStore
         vault_path: state
             .paths
             .app_data_dir
-            .join("ralphhub.vault.hold")
+            .join("amitos.vault.hold")
             .display()
             .to_string(),
-        client_name: "ralphhub-keys".to_string(),
-        vault_password: format!("ralphhub::{machine}::{username}::stronghold"),
+        client_name: "amitos-keys".to_string(),
+        vault_password: format!("amitos::{machine}::{username}::stronghold"),
     })
 }
 
@@ -125,7 +130,7 @@ fn ensure_state_file(workspace: &Path) -> Result<PathBuf, String> {
     if !path.exists() {
         fs::write(
             &path,
-            "# RalphHub State\n\n- Status: initialized\n- Next step: update this file from the active workflow.\n",
+            "# AmitOS State\n\n- Status: initialized\n- Next step: update this file from the active workflow.\n",
         )
         .map_err(|error| error.to_string())?;
     }

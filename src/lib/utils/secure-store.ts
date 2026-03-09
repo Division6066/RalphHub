@@ -1,6 +1,6 @@
 import { isDesktopRuntime, invokeTauri } from '$lib/utils/desktop';
 
-// Legacy fixed key fields (kept for backward compat)
+// Legacy fixed key fields (kept for backwards compatibility)
 export const KEY_FIELDS = [
 	'ANTHROPIC_API_KEY',
 	'OPENAI_API_KEY',
@@ -34,6 +34,8 @@ export function createEmptyKeyMap(): KeyMap {
 	};
 }
 
+// ─── Stronghold helper ────────────────────────────────────────────────────────
+
 async function getStronghold(): Promise<{ stronghold: any; client: any; store: any; config: SecureStoreConfig }> {
 	const [{ Stronghold }, config] = await Promise.all([
 		import('@tauri-apps/plugin-stronghold'),
@@ -45,14 +47,21 @@ async function getStronghold(): Promise<{ stronghold: any; client: any; store: a
 	return { stronghold, client, store, config };
 }
 
+// ─── Legacy fixed-key operations ─────────────────────────────────────────────
+
 export async function loadKeys(): Promise<KeyMap> {
 	const defaults = createEmptyKeyMap();
+
 	if (!isDesktopRuntime()) {
+		// Browser fallback: load from localStorage
+		for (const field of KEY_FIELDS) {
+			const v = localStorage.getItem(`amitos_key_${field}`);
+			if (v) defaults[field] = v;
+		}
 		return defaults;
 	}
 
 	const { stronghold, store } = await getStronghold();
-
 	try {
 		for (const field of KEY_FIELDS) {
 			const storedValue = await store.get(field);
@@ -66,18 +75,26 @@ export async function loadKeys(): Promise<KeyMap> {
 
 export async function saveKeys(values: KeyMap): Promise<void> {
 	if (!isDesktopRuntime()) {
-		throw new Error('Secure storage is only available inside the RalphHub desktop runtime.');
+		// Browser fallback: save to localStorage
+		for (const field of KEY_FIELDS) {
+			const v = (values[field] ?? '').trim();
+			if (v) {
+				localStorage.setItem(`amitos_key_${field}`, v);
+			} else {
+				localStorage.removeItem(`amitos_key_${field}`);
+			}
+		}
+		return;
 	}
 
 	const { stronghold, store } = await getStronghold();
-
 	try {
 		for (const field of KEY_FIELDS) {
-			const value = values[field].trim();
+			const value = (values[field] ?? '').trim();
 			if (value) {
 				await store.insert(field, Array.from(encoder.encode(value)));
 			} else {
-				await store.remove(field);
+				try { await store.remove(field); } catch {}
 			}
 		}
 		await stronghold.save();
@@ -92,7 +109,13 @@ export async function loadDynamicKeys(keyNames: string[]): Promise<DynamicKeyMap
 	const result: DynamicKeyMap = {};
 	for (const k of keyNames) result[k] = '';
 
-	if (!isDesktopRuntime() || keyNames.length === 0) return result;
+	if (!isDesktopRuntime() || keyNames.length === 0) {
+		// Browser fallback
+		for (const k of keyNames) {
+			result[k] = localStorage.getItem(`amitos_key_${k}`) ?? '';
+		}
+		return result;
+	}
 
 	const { stronghold, store } = await getStronghold();
 	try {
@@ -108,7 +131,13 @@ export async function loadDynamicKeys(keyNames: string[]): Promise<DynamicKeyMap
 
 export async function saveDynamicKey(keyName: string, value: string): Promise<void> {
 	if (!isDesktopRuntime()) {
-		throw new Error('Secure storage is only available inside the RalphHub desktop runtime.');
+		const trimmed = value.trim();
+		if (trimmed) {
+			localStorage.setItem(`amitos_key_${keyName}`, trimmed);
+		} else {
+			localStorage.removeItem(`amitos_key_${keyName}`);
+		}
+		return;
 	}
 
 	const { stronghold, store } = await getStronghold();
@@ -127,7 +156,15 @@ export async function saveDynamicKey(keyName: string, value: string): Promise<vo
 
 export async function saveDynamicKeys(keyMap: DynamicKeyMap): Promise<void> {
 	if (!isDesktopRuntime()) {
-		throw new Error('Secure storage is only available inside the RalphHub desktop runtime.');
+		for (const [key, value] of Object.entries(keyMap)) {
+			const trimmed = value.trim();
+			if (trimmed) {
+				localStorage.setItem(`amitos_key_${key}`, trimmed);
+			} else {
+				localStorage.removeItem(`amitos_key_${key}`);
+			}
+		}
+		return;
 	}
 
 	const { stronghold, store } = await getStronghold();
@@ -137,7 +174,7 @@ export async function saveDynamicKeys(keyMap: DynamicKeyMap): Promise<void> {
 			if (trimmed) {
 				await store.insert(key, Array.from(encoder.encode(trimmed)));
 			} else {
-				await store.remove(key);
+				try { await store.remove(key); } catch {}
 			}
 		}
 		await stronghold.save();
@@ -147,7 +184,10 @@ export async function saveDynamicKeys(keyMap: DynamicKeyMap): Promise<void> {
 }
 
 export async function hasKey(keyName: string): Promise<boolean> {
-	if (!isDesktopRuntime()) return false;
+	if (!isDesktopRuntime()) {
+		const v = localStorage.getItem(`amitos_key_${keyName}`);
+		return !!v && v.length > 0;
+	}
 	const { stronghold, store } = await getStronghold();
 	try {
 		const val = await store.get(keyName);
@@ -160,7 +200,10 @@ export async function hasKey(keyName: string): Promise<boolean> {
 }
 
 export async function deleteKey(keyName: string): Promise<void> {
-	if (!isDesktopRuntime()) return;
+	if (!isDesktopRuntime()) {
+		localStorage.removeItem(`amitos_key_${keyName}`);
+		return;
+	}
 	const { stronghold, store } = await getStronghold();
 	try {
 		await store.remove(keyName);
@@ -170,7 +213,12 @@ export async function deleteKey(keyName: string): Promise<void> {
 	}
 }
 
-async function getClient(stronghold: { loadClient(name: string): Promise<any>; createClient(name: string): Promise<any> }, clientName: string) {
+// ─── Internal helpers ─────────────────────────────────────────────────────────
+
+async function getClient(
+	stronghold: { loadClient(name: string): Promise<any>; createClient(name: string): Promise<any> },
+	clientName: string
+) {
 	try {
 		return await stronghold.loadClient(clientName);
 	} catch {
@@ -179,8 +227,6 @@ async function getClient(stronghold: { loadClient(name: string): Promise<any>; c
 }
 
 function decodeValue(value: Uint8Array | number[] | null): string {
-	if (!value?.length) {
-		return '';
-	}
+	if (!value?.length) return '';
 	return decoder.decode(new Uint8Array(value));
 }

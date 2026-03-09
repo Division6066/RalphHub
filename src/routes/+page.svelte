@@ -1,376 +1,135 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { invokeTauri, isDesktopRuntime } from '$lib/utils/desktop';
-	import ModelSwitcher from '$lib/components/ModelSwitcher.svelte';
-	import {
-		loadProviders,
-		createProvider,
-		logApiUsage,
-		createKaizenTask,
-		getMemoryStats,
-		enabledProvidersStore,
-		providersStore,
-		activeModelStore,
-		activeProviderIdStore,
-		memoryStatsStore,
-		kaizenTasksStore,
-		CATEGORY_LABELS,
-		type Provider
-	} from '$lib/utils/provider-registry';
 
-	type DashboardSnapshot = {
+	type Snapshot = {
 		bun: { installed: boolean; version?: string | null };
 		managedProjectCount: number;
 		workflowRunCount: number;
-		overnightLoopCount: number;
+		memoryEntryCount: number;
+		kaizenTaskCount: number;
+		todayTaskCount: number;
+		apiKeyCount: number;
 	};
 
-	type ManagedProject = {
-		id: string;
-		slug: string;
-		sourceUrl: string;
-		status: string;
-		branch: string;
-		workspacePath: string;
-	};
-
-	let snapshot: DashboardSnapshot | null = null;
-	let projects: ManagedProject[] = [];
+	let snapshot: Snapshot | null = null;
 	let loading = true;
-	let error = '';
+	let isDesktop = false;
 
-	// Final test state
-	let testRunning = false;
-	let testLog: string[] = [];
-	let testComplete = false;
-
-	$: quickStats = [
-		{ label: 'Managed projects', value: String(snapshot?.managedProjectCount ?? 0), detail: 'Tracked in SQLite' },
-		{ label: 'Package manager', value: snapshot?.bun.installed ? `Bun ${snapshot?.bun.version ?? ''}`.trim() : 'Missing', detail: 'No npm fallback' },
-		{ label: 'Workflow runs', value: String(snapshot?.workflowRunCount ?? 0), detail: 'Prepared overnight chains' },
-		{ label: 'Providers active', value: String($enabledProvidersStore.length), detail: 'From provider registry' },
+	const features = [
+		{ icon: '☀️', title: 'Today Board', desc: 'ADHD-friendly daily focus — pick 3 tasks and ship them.', href: '/today', color: 'from-amber-500/20 to-orange-500/10', border: 'border-amber-400/20' },
+		{ icon: '♾️', title: 'Kaizen OS', desc: 'Continuous improvement across all life domains.', href: '/kaizen', color: 'from-violet-500/20 to-purple-500/10', border: 'border-violet-400/20' },
+		{ icon: '🧠', title: 'Memory Spine', desc: 'Capture and search everything you want to remember.', href: '/memory', color: 'from-cyan-500/20 to-blue-500/10', border: 'border-cyan-400/20' },
+		{ icon: '🛠️', title: '35+ AI Tools', desc: 'One-click deploy of Perplexica, Aider, OpenHands, and more.', href: '/tools', color: 'from-emerald-500/20 to-teal-500/10', border: 'border-emerald-400/20' },
+		{ icon: '🔑', title: '50+ API Keys', desc: 'Universal key manager — all providers, zero friction.', href: '/settings', color: 'from-rose-500/20 to-pink-500/10', border: 'border-rose-400/20' },
+		{ icon: '🎙️', title: 'Voice Mode', desc: 'Say commands to control AmitOS hands-free.', href: '/voice', color: 'from-indigo-500/20 to-blue-500/10', border: 'border-indigo-400/20' },
 	];
-
-	const milestones = [
-		'Dynamic Provider Registry with SQLite + 50+ pre-loaded providers',
-		'Top 50 APIs in LLMs, Video, Image, Audio, Search, Automation, Voice, MCP',
-		'Auto-injection of provider keys into every tool and workflow',
-		'Firecrawl + Apify first-class with one-click Connect & Test',
-		'Settings page with search/filter for all 50+ providers',
-		'Memory Spine + Kaizen Tasks auto-created from every API call',
-		'Switch Model dropdown everywhere (local Ollama + all connected providers)',
-		'Final test: add custom provider, simulate Firecrawl + Fal.ai workflow'
-	];
-
-	// Category stats
-	$: categoryStats = Object.entries(
-		$providersStore.reduce((acc, p) => {
-			if (!acc[p.category]) acc[p.category] = 0;
-			acc[p.category]++;
-			return acc;
-		}, {} as Record<string, number>)
-	).sort((a, b) => b[1] - a[1]).slice(0, 6);
 
 	onMount(async () => {
-		await loadProviders();
+		isDesktop = isDesktopRuntime();
+		if (!isDesktop) { loading = false; return; }
 		try {
-			await getMemoryStats();
-		} catch { /* non-critical */ }
-
-		if (!isDesktopRuntime()) {
-			loading = false;
-			return;
-		}
-
-		try {
-			const [dashboard, managedProjects] = await Promise.all([
-				invokeTauri<DashboardSnapshot>('get_dashboard_snapshot'),
-				invokeTauri<ManagedProject[]>('list_managed_projects')
-			]);
-			snapshot = dashboard;
-			projects = managedProjects;
-		} catch (loadError) {
-			error = loadError instanceof Error ? loadError.message : 'Failed to load dashboard.';
-		} finally {
-			loading = false;
-		}
+			snapshot = await invokeTauri<Snapshot>('get_dashboard_snapshot');
+		} catch {}
+		loading = false;
 	});
 
-	// ─── Final Integration Test ───────────────────────────────────────────────
-	async function runFinalTest() {
-		testRunning = true;
-		testLog = [];
-		testComplete = false;
-
-		const log = (msg: string) => {
-			testLog = [...testLog, `[${new Date().toLocaleTimeString()}] ${msg}`];
-		};
-
-		try {
-			log('🚀 Starting Universal API System final test...');
-
-			// Step 1: Add a random new provider
-			log('Step 1: Adding custom provider "TestProvider AI"...');
-			const newProvider = await createProvider({
-				name: 'TestProvider AI',
-				category: 'llm',
-				baseUrl: 'https://api.testprovider.ai/v1',
-				authType: 'bearer',
-				apiKeyEnv: 'TESTPROVIDER_API_KEY',
-				models: ['test-model-1', 'test-model-ultra', 'test-model-fast'],
-				isLocal: false,
-				description: 'Custom test provider — proves any future provider can be added',
-				docsUrl: 'https://testprovider.ai/docs',
-				logoEmoji: '🧪'
-			});
-			log(`✓ Provider created: ${newProvider.name} (id: ${newProvider.id})`);
-
-			await new Promise((r) => setTimeout(r, 300));
-
-			// Step 2: Simulate Firecrawl usage
-			log('Step 2: Simulating Firecrawl API call...');
-			const firecrawlProvider = $providersStore.find((p) => p.name === 'Firecrawl');
-			if (firecrawlProvider) {
-				const fcLog = await logApiUsage({
-					providerId: firecrawlProvider.id,
-					providerName: 'Firecrawl',
-					model: 'scrape',
-					tokensIn: 150,
-					tokensOut: 2400,
-					costUsd: 0.001,
-					outputSummary: 'Scraped 3 web pages about AI video generation tools. Found Runway, Kling, Luma pricing pages with detailed feature comparisons.',
-					toolId: 'universal-ralph-loop',
-					workflowId: 'test-workflow-001'
-				});
-				log(`✓ Firecrawl usage logged: ${fcLog.id}`);
-			} else {
-				log('ℹ Firecrawl not found in registry — skipping (would work with real DB)');
-			}
-
-			await new Promise((r) => setTimeout(r, 300));
-
-			// Step 3: Simulate Fal.ai video generation
-			log('Step 3: Simulating Fal.ai video generation...');
-			const falProvider = $providersStore.find((p) => p.name === 'Fal.ai');
-			if (falProvider) {
-				const falLog = await logApiUsage({
-					providerId: falProvider.id,
-					providerName: 'Fal.ai',
-					model: 'fal-ai/flux/dev',
-					tokensIn: 100,
-					tokensOut: 500,
-					costUsd: 0.05,
-					outputSummary: 'Generated 4K image of futuristic AI workstation using FLUX.dev. Output: 1024x1024 PNG, 2.3MB.',
-					toolId: 'universal-ralph-loop',
-					workflowId: 'test-workflow-001'
-				});
-				log(`✓ Fal.ai usage logged: ${falLog.id}`);
-			} else {
-				log('ℹ Fal.ai not found in registry — skipping (would work with real DB)');
-			}
-
-			await new Promise((r) => setTimeout(r, 300));
-
-			// Step 4: Create explicit Kaizen task
-			log('Step 4: Creating Kaizen task for workflow review...');
-			const task = await createKaizenTask({
-				title: 'Review: Firecrawl + Fal.ai workflow output',
-				description: 'Automated workflow generated web research + image. Review output quality and cost efficiency.',
-				priority: 'high',
-				source: 'final-test',
-				providerId: firecrawlProvider?.id ?? newProvider.id,
-				usageLogId: ''
-			});
-			log(`✓ Kaizen task created: "${task.title}"`);
-
-			await new Promise((r) => setTimeout(r, 300));
-
-			// Step 5: Verify memory stats
-			log('Step 5: Verifying Memory Spine stats...');
-			const stats = await getMemoryStats();
-			log(`✓ Memory Spine: ${stats.totalEntries} entries, $${stats.totalCostUsd.toFixed(6)} total cost`);
-
-			await new Promise((r) => setTimeout(r, 300));
-
-			// Step 6: Verify provider count
-			log(`Step 6: Provider registry contains ${$providersStore.length} providers.`);
-			log(`✓ Categories: ${[...new Set($providersStore.map((p) => p.category))].join(', ')}`);
-
-			await new Promise((r) => setTimeout(r, 300));
-
-			log('');
-			log('🎉 ═══════════════════════════════════════════');
-			log('   UNIVERSAL API SYSTEM COMPLETE');
-			log('═══════════════════════════════════════════ 🎉');
-			testComplete = true;
-		} catch (e) {
-			log(`❌ Test error: ${e instanceof Error ? e.message : String(e)}`);
-		} finally {
-			testRunning = false;
-		}
+	function stat(label: string, value: string | number, sub: string) {
+		return { label, value: String(value), sub };
 	}
+
+	$: stats = snapshot
+		? [
+				stat('Today tasks', snapshot.todayTaskCount, 'Waiting for you'),
+				stat('Total tasks', snapshot.kaizenTaskCount, 'Across all domains'),
+				stat('Memories', snapshot.memoryEntryCount, 'Saved to spine'),
+				stat('API providers', snapshot.apiKeyCount, 'Keys configured'),
+				stat('Workflows', snapshot.workflowRunCount, 'Runs prepared'),
+				stat('Bun', snapshot.bun.installed ? (snapshot.bun.version ?? '✓') : '✗', 'Package manager'),
+			]
+		: [];
 </script>
 
-<section class="space-y-6">
-	<div class="rounded-[2rem] border border-white/10 bg-slate-950/50 p-8 shadow-2xl shadow-cyan-950/20 backdrop-blur">
-		<div class="max-w-3xl">
-			<p class="text-sm uppercase tracking-[0.35em] text-cyan-300/80">Dashboard</p>
-			<h1 class="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-				RalphHub — Universal API Provider System
+<section class="space-y-5">
+	<!-- Hero -->
+	<div class="relative overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-br from-violet-950/60 via-slate-950/80 to-cyan-950/40 p-8 shadow-2xl backdrop-blur">
+		<div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(139,92,246,0.15),transparent_60%)]"></div>
+		<div class="relative">
+			<div class="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-400/10 px-3 py-1">
+				<span class="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse"></span>
+				<span class="text-[11px] font-semibold uppercase tracking-widest text-violet-300">AmitOS v1.0 — Ready</span>
+			</div>
+			<h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+				Your Universal<br/>
+				<span class="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">AI Operating System</span>
 			</h1>
-			<p class="mt-4 text-base leading-7 text-slate-300 sm:text-lg">
-				Connect any API, any provider, any model. Keys auto-injected. Every call logged to Memory Spine. Kaizen tasks created automatically.
+			<p class="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+				Today Board · Kaizen OS · Memory Spine · 35+ AI tools · 50+ API providers · Voice mode · Desktop + Mobile.
+				Everything for ADHD-friendly deep work, shipped in one app.
 			</p>
-		</div>
-
-		<!-- Global Model Switcher -->
-		<div class="mt-6 flex items-center gap-3 flex-wrap">
-			<span class="text-sm text-slate-400">Active model:</span>
-			<ModelSwitcher />
-			{#if $enabledProvidersStore.length === 0}
-				<a href="/settings" class="text-sm text-amber-400 hover:text-amber-300 underline">
-					Connect your first provider →
+			<div class="mt-6 flex flex-wrap gap-3">
+				<a href="/today" class="rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/30 transition hover:scale-105">
+					☀️ Start Today
 				</a>
-			{/if}
-		</div>
-
-		<div class="mt-8 flex flex-wrap gap-3">
-			<a href="/deploy" class="rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/30">
-				Start a deploy
-			</a>
-			<a href="/workflows" class="rounded-full border border-white/12 bg-white/5 px-5 py-3 text-sm font-semibold text-white">
-				Compose a workflow
-			</a>
-			<a href="/settings" class="rounded-full border border-white/12 bg-white/5 px-5 py-3 text-sm font-semibold text-white">
-				Manage providers
-			</a>
+				<a href="/kaizen" class="rounded-xl border border-white/12 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10">
+					♾️ Kaizen Board
+				</a>
+				<a href="/tools" class="rounded-xl border border-white/12 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10">
+					🛠️ Launch Tools
+				</a>
+			</div>
 		</div>
 	</div>
 
-	<!-- Quick Stats -->
-	<div class="grid gap-4 xl:grid-cols-4">
-		{#each quickStats as stat}
-			<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-				<p class="text-sm text-slate-400">{stat.label}</p>
-				<p class="mt-3 text-2xl font-semibold text-white">{stat.value}</p>
-				<p class="mt-2 text-sm text-slate-500">{stat.detail}</p>
-			</div>
+	<!-- Stats row -->
+	{#if !loading && stats.length > 0}
+		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+			{#each stats as s}
+				<div class="rounded-xl border border-white/8 bg-slate-950/50 p-4 backdrop-blur">
+					<p class="text-xs text-slate-500">{s.label}</p>
+					<p class="mt-1.5 text-2xl font-bold text-white">{s.value}</p>
+					<p class="mt-0.5 text-xs text-slate-500">{s.sub}</p>
+				</div>
+			{/each}
+		</div>
+	{:else if loading}
+		<div class="flex items-center gap-2 rounded-xl border border-white/8 bg-slate-950/50 p-4 text-sm text-slate-400">
+			<span class="animate-pulse">⬡</span>
+			<span>Loading AmitOS runtime…</span>
+		</div>
+	{/if}
+
+	<!-- Feature grid -->
+	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+		{#each features as f}
+			<a
+				href={f.href}
+				class={`group relative overflow-hidden rounded-2xl border ${f.border} bg-gradient-to-br ${f.color} p-6 transition hover:scale-[1.02] hover:shadow-lg`}
+			>
+				<div class="mb-3 text-3xl">{f.icon}</div>
+				<h3 class="text-base font-bold text-white">{f.title}</h3>
+				<p class="mt-2 text-sm leading-6 text-slate-300">{f.desc}</p>
+				<span class="absolute bottom-4 right-4 text-slate-600 transition group-hover:text-slate-400">→</span>
+			</a>
 		{/each}
 	</div>
 
-	<div class="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-		<!-- Milestones -->
-		<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-			<div class="flex items-center justify-between">
-				<h2 class="text-lg font-semibold text-white">API Mega Milestones</h2>
-				<span class="rounded-full border border-green-400/20 bg-green-400/10 px-3 py-1 text-xs text-green-300">8/8 complete</span>
-			</div>
-			<div class="mt-6 space-y-3">
-				{#each milestones as milestone, i}
-					<div class="flex items-start gap-3">
-						<div class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-green-500/20 text-xs text-green-400 font-semibold">
-							✓
-						</div>
-						<p class="text-sm text-slate-300">{milestone}</p>
-					</div>
-				{/each}
-			</div>
-		</div>
-
-		<!-- Provider stats -->
-		<div class="space-y-4">
-			<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-				<h2 class="text-lg font-semibold text-white">Provider Registry</h2>
-				<p class="mt-2 text-3xl font-bold text-white">{$providersStore.length}</p>
-				<p class="text-sm text-slate-500 mt-1">providers loaded</p>
-				<div class="mt-4 space-y-2">
-					{#each categoryStats as [cat, count]}
-						<div class="flex items-center justify-between">
-							<span class="text-xs text-slate-400">{CATEGORY_LABELS[cat] ?? cat}</span>
-							<div class="flex items-center gap-2">
-								<div class="h-1.5 rounded-full bg-cyan-400/30 overflow-hidden" style="width: {Math.max(count * 8, 20)}px">
-									<div class="h-full rounded-full bg-cyan-400" style="width: 100%"></div>
-								</div>
-								<span class="text-xs text-slate-500 w-4 text-right">{count}</span>
-							</div>
-						</div>
-					{/each}
-				</div>
-			</div>
-
-			<!-- Memory Spine stats -->
-			{#if $memoryStatsStore}
-				<div class="rounded-3xl border border-violet-400/20 bg-violet-500/5 p-5 backdrop-blur">
-					<h2 class="text-sm font-semibold text-white mb-3">🧠 Memory Spine</h2>
-					<div class="grid grid-cols-2 gap-3">
-						<div>
-							<p class="text-xs text-slate-500">Entries</p>
-							<p class="text-xl font-semibold text-white">{$memoryStatsStore.totalEntries}</p>
-						</div>
-						<div>
-							<p class="text-xs text-slate-500">Total Cost</p>
-							<p class="text-xl font-semibold text-white">${$memoryStatsStore.totalCostUsd.toFixed(4)}</p>
-						</div>
-					</div>
-				</div>
-			{/if}
+	<!-- Quick actions -->
+	<div class="rounded-2xl border border-white/8 bg-slate-950/50 p-6 backdrop-blur">
+		<h2 class="mb-4 text-base font-bold text-white">Quick Actions</h2>
+		<div class="flex flex-wrap gap-2">
+			<a href="/today" class="rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-medium text-amber-200 transition hover:bg-amber-400/20">☀️ Open Today Board</a>
+			<a href="/kaizen" class="rounded-xl border border-violet-400/25 bg-violet-400/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-400/20">+ New Kaizen Task</a>
+			<a href="/memory" class="rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/20">🧠 Add Memory</a>
+			<a href="/voice" class="rounded-xl border border-indigo-400/25 bg-indigo-400/10 px-4 py-2 text-sm font-medium text-indigo-200 transition hover:bg-indigo-400/20">🎙️ Voice Command</a>
+			<a href="/settings" class="rounded-xl border border-rose-400/25 bg-rose-400/10 px-4 py-2 text-sm font-medium text-rose-200 transition hover:bg-rose-400/20">🔑 Add API Key</a>
+			<a href="/workflows" class="rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-200 transition hover:bg-emerald-400/20">⚡ New Workflow</a>
 		</div>
 	</div>
 
-	<!-- Final Integration Test Panel -->
-	<div class="rounded-3xl border {testComplete ? 'border-green-400/30 bg-green-500/5' : 'border-cyan-400/20 bg-cyan-500/5'} p-6 backdrop-blur">
-		<div class="flex items-start justify-between gap-4">
-			<div>
-				<h2 class="text-lg font-semibold text-white">Milestone 8: Final Integration Test</h2>
-				<p class="mt-2 text-sm text-slate-400">
-					Add a random new provider, simulate Firecrawl + Fal.ai workflow, verify everything writes to memory/tasks.
-				</p>
-			</div>
-			<button
-				type="button"
-				on:click={runFinalTest}
-				disabled={testRunning}
-				class="rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg disabled:opacity-60 whitespace-nowrap"
-			>
-				{testRunning ? 'Running...' : testComplete ? '✓ Re-run Test' : 'Run Final Test'}
-			</button>
+	{#if !isDesktop}
+		<div class="rounded-xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm text-amber-200">
+			<strong>Running in browser mode.</strong> For full functionality including secure key storage, Kaizen persistence, and tool deployment — launch the AmitOS desktop app.
 		</div>
-
-		{#if testLog.length > 0}
-			<div class="mt-4 rounded-2xl bg-slate-950/80 p-4 font-mono text-xs space-y-1 max-h-64 overflow-y-auto border border-white/5">
-				{#each testLog as line}
-					<p class="{line.includes('✓') ? 'text-green-400' : line.includes('❌') ? 'text-rose-400' : line.includes('🎉') || line.includes('COMPLETE') ? 'text-cyan-300 font-bold' : 'text-slate-300'}">{line}</p>
-				{/each}
-			</div>
-		{/if}
-	</div>
-
-	<!-- Managed Projects -->
-	<div class="rounded-3xl border border-white/10 bg-slate-950/45 p-6 backdrop-blur">
-		<div class="flex items-center justify-between">
-			<h2 class="text-lg font-semibold text-white">Managed projects</h2>
-			<span class="text-sm text-slate-500">{projects.length} deployed</span>
-		</div>
-		<div class="mt-6 space-y-3">
-			{#if loading}
-				<p class="text-sm text-slate-500">Loading...</p>
-			{:else if error}
-				<p class="text-sm text-rose-400">{error}</p>
-			{:else if !isDesktopRuntime()}
-				<p class="text-sm text-slate-500">Open in the RalphHub desktop app to see managed projects.</p>
-			{:else if !projects.length}
-				<p class="text-sm text-slate-500">No projects yet. <a href="/deploy" class="text-cyan-400 underline">Deploy your first →</a></p>
-			{:else}
-				{#each projects.slice(0, 5) as project}
-					<div class="flex items-center justify-between rounded-2xl border border-white/8 bg-white/3 p-4">
-						<div>
-							<p class="text-sm font-medium text-white">{project.slug}</p>
-							<p class="mt-1 text-xs text-slate-500 font-mono truncate max-w-xs">{project.sourceUrl}</p>
-						</div>
-						<span class="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-400">{project.status}</span>
-					</div>
-				{/each}
-			{/if}
-		</div>
-	</div>
+	{/if}
 </section>
