@@ -1,17 +1,24 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
 	import '../app.css';
+	import ModelSwitcher from '$lib/components/ModelSwitcher.svelte';
+	import { loadProviders, enabledProvidersStore, activeModelStore, memoryStatsStore } from '$lib/utils/provider-registry';
 
 	const navigation = [
 		{ href: '/', label: 'Dashboard' },
 		{ href: '/deploy', label: 'Deploy' },
 		{ href: '/tools', label: 'Tools' },
 		{ href: '/workflows', label: 'Workflows' },
-		{ href: '/settings', label: 'Settings' }
+		{ href: '/settings', label: 'Providers & Settings' }
 	];
 
 	let { children } = $props();
+
+	onMount(async () => {
+		await loadProviders();
+	});
 </script>
 
 <svelte:head>
@@ -45,11 +52,32 @@
 				{/each}
 			</nav>
 
-			<div class="mt-auto rounded-2xl border border-cyan-400/20 bg-cyan-400/8 p-4 text-sm text-slate-300">
-				<p class="font-medium text-cyan-100">Bootstrap in progress</p>
-				<p class="mt-2 leading-6 text-slate-400">
-					Next: secure keys, deploy flows, tool orchestration, and workflow chaining.
+			<!-- Global Model Switcher in sidebar -->
+			<div class="mt-6">
+				<p class="mb-2 text-xs uppercase tracking-wider text-slate-600">Active Model</p>
+				<ModelSwitcher compact />
+			</div>
+
+			<div class="mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/8 p-4 text-sm text-slate-300">
+				<p class="font-medium text-cyan-100">
+					{#if $enabledProvidersStore.length > 0}
+						{$enabledProvidersStore.length} providers active
+					{:else}
+						No providers active
+					{/if}
 				</p>
+				<p class="mt-2 leading-6 text-slate-400">
+					{#if $activeModelStore}
+						Model: {$activeModelStore}
+					{:else}
+						<a href="/settings" class="text-cyan-400 hover:text-cyan-300 underline">Connect a provider →</a>
+					{/if}
+				</p>
+				{#if $memoryStatsStore}
+					<p class="mt-2 text-xs text-slate-500">
+						Memory: {$memoryStatsStore.totalEntries} entries · ${$memoryStatsStore.totalCostUsd.toFixed(4)} spent
+					</p>
+				{/if}
 			</div>
 		</aside>
 
