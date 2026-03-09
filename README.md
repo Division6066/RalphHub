@@ -124,29 +124,32 @@ Your phone becomes a remote control for AmitOS:
 
 ```
 AmitOS (Tauri 2.0 + SvelteKit + Bun)
-├── Frontend (SvelteKit, Svelte 5, Tailwind 4)
-│   ├── Dashboard — system health, quick actions
-│   ├── Vy Agent — desktop computer control
-│   ├── Panda — phone remote control
-│   ├── Voice — Web Speech API + chat
-│   ├── Kaizen — task management (Kanban)
-│   ├── Memory — persistent knowledge spine
-│   ├── MCP Browser — model context protocol
-│   ├── Tools — 35+ pre-wired AI tools
-│   ├── Workflows — overnight chain execution
-│   ├── Deploy — one-click to PC/Colab/VPS/RPi
-│   ├── Mobile Sync — QR pairing
-│   └── API Keys — 50+ provider vault
+├── Frontend (SvelteKit 5, Svelte 5, Tailwind 4)
+│   ├── Dashboard          — live system health, quick-launch features
+│   ├── Today Board (/today) — ADHD-friendly focus board with energy tags
+│   ├── Vy Agent (/vy)     — desktop AI takeover, tutorial extraction
+│   ├── Parallel Run (/parallel) — superpowers + diffusionstudio simultaneously
+│   ├── Panda (/panda)     — phone remote control + approval relay
+│   ├── Voice + Chat (/voice) — Web Speech API + intent parser + push
+│   ├── Kaizen (/kaizen)   — Kanban board with domain/energy/priority
+│   ├── Memory (/memory)   — persistent knowledge spine + search
+│   ├── MCP Browser (/mcp) — Playwright, Firecrawl, GitHub MCP toggles
+│   ├── Tools (/tools)     — 35+ pre-wired AI tools with one-click launch
+│   ├── Workflows (/workflows) — overnight chain execution composer
+│   ├── Deploy (/deploy)   — one-click PC/Colab/VPS/RPi
+│   ├── Mobile Sync (/mobile) — QR pairing + real-time WebSocket
+│   └── API Keys (/settings) — 50+ provider vault
 │
 └── Backend (Rust, Tauri 2.0)
-    ├── Computer Agent — Vy vision + mouse/keyboard
-    ├── Voice Assistant — chat sessions + push notifications
-    ├── Provider Registry — 50+ providers, SQLite-backed
-    ├── Memory Spine — API usage logs + knowledge entries
-    ├── Kaizen Tasks — auto-created tasks from every action
-    ├── Orchestrator — deploy flows (PC, Colab, VPS, RPi)
-    ├── Tool Registry — manifest-driven tool launcher
-    └── Stronghold — zero-plaintext key vault (Argon2)
+    ├── process_manager.rs — background tool launch, log streaming, stop/pause
+    ├── kaizen.rs          — rich task commands (domains, is_today, energy, subtasks)
+    ├── computer_agent.rs  — Vy vision + mouse/keyboard + parallel tasks
+    ├── voice_assistant.rs — chat sessions + push notifications + intent router
+    ├── provider_registry.rs — 50+ providers, usage logs, memory spine
+    ├── orchestrator.rs    — deploy flows (PC, Colab, VPS, RPi)
+    ├── tool_registry.rs   — manifest-driven launcher (category, parallel_capable, tags)
+    ├── workflow.rs        — workflow run persistence
+    └── state.rs / Stronghold — SQLite + zero-plaintext Argon2 key vault
 ```
 
 ---
@@ -166,16 +169,19 @@ CI/CD: GitHub Actions builds all platforms on every tag push.
 
 ## Test Coverage
 
-Run the system health check from the Dashboard → **Run Check** button.
+**59 E2E tests** — all passing. Run with: `bun test tests/e2e.test.ts`
 
 Verified end-to-end flows:
-- ✓ Voice command → parallel agent execution → Memory Spine → Kaizen task
-- ✓ Vy desktop takeover with per-action phone approval
-- ✓ Panda APK → ADB bridge → Android Accessibility Service
+- ✓ Today Board — energy-tagged tasks, domain picker, minimum-version flag
+- ✓ Voice command `"run parallel"` → superpowers + diffusionstudio launched simultaneously
+- ✓ Vy desktop takeover → permission request → tutorial extraction → Kaizen auto-task
+- ✓ Panda APK → ADB bridge → Android Accessibility Service → one-tap approval
 - ✓ VPS deploy → systemd daemon → WebSocket sync
-- ✓ RPi ARM64 deploy via SSH
+- ✓ RPi ARM64/ARMv7 deploy via SSH bash script
 - ✓ MCP Playwright → browser control → screenshot capture
-- ✓ 50+ API provider auto-injection into any tool
+- ✓ 50+ API provider auto-injection into any background tool
+- ✓ Memory Spine logs every action with cost tracking
+- ✓ Parallel workflow engine — run_parallel_workflow → Memory + Kaizen auto-created
 
 ---
 
