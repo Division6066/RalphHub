@@ -76,18 +76,19 @@
 		</aside>
 
 		<!-- Mobile header -->
-		<div class="fixed left-0 right-0 top-0 z-50 flex items-center justify-between rounded-b-xl border-b border-white/8 bg-slate-950/90 px-4 py-3 backdrop-blur lg:hidden">
+		<div class="fixed left-0 right-0 top-0 z-50 flex items-center justify-between rounded-b-xl border-b border-white/8 bg-slate-950/95 px-4 py-3 backdrop-blur lg:hidden">
 			<div class="flex items-center gap-2">
-				<div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 text-xs font-bold text-white">A</div>
+				<div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 text-xs font-bold text-white shadow-md">A</div>
 				<span class="text-sm font-bold text-white">AmitOS</span>
 			</div>
-			<div class="flex gap-2">
-				{#each navigation.slice(0, 4) as item}
+			<div class="flex gap-1">
+				{#each navigation.slice(0, 6) as item}
 					<a
 						href={item.href}
-						class={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-							isActive(item.href) ? 'bg-violet-500/25 text-violet-100' : 'text-slate-400'
+						class={`rounded-lg px-2 py-1.5 text-base transition ${
+							isActive(item.href) ? 'bg-violet-500/25 text-violet-100' : 'text-slate-400 hover:text-white'
 						}`}
+						title={item.label}
 					>
 						{item.icon}
 					</a>
