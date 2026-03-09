@@ -8,6 +8,9 @@
 
 	const navigation = [
 		{ href: '/', label: 'Dashboard' },
+		{ href: '/computer-control', label: '🤖 Computer Control (Vy+Panda)' },
+		{ href: '/voice', label: '🎙️ Voice + Chat' },
+		{ href: '/remote-nodes', label: '☁️ VPS + Raspberry Pi' },
 		{ href: '/deploy', label: 'Deploy' },
 		{ href: '/tools', label: 'Tools' },
 		{ href: '/workflows', label: 'Workflows' },
