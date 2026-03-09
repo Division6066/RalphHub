@@ -156,3 +156,53 @@ input[type="checkbox"]:checked::after {
 	background: rgba(139, 92, 246, 0.3);
 	color: white;
 }
+
+/* ─── ADHD / Dyslexia Helpers ─────────────────────────────────────────────── */
+
+/* Scannable status badges */
+.badge-now { background: rgba(34,211,238,0.15); color: #67e8f9; border: 1px solid rgba(34,211,238,0.25); border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.badge-new { background: rgba(139,92,246,0.15); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.25); border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* High-contrast action area */
+.action-primary {
+	background: linear-gradient(135deg, #7c3aed, #0891b2);
+	color: white;
+	font-weight: 700;
+	border-radius: 0.75rem;
+	padding: 0.6rem 1.25rem;
+	font-size: 0.875rem;
+	transition: opacity 0.15s, transform 0.1s;
+}
+.action-primary:hover { opacity: 0.9; transform: scale(1.02); }
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+	*, ::before, ::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/* Minimum touch targets for ADHD / motor control */
+button, [role="button"], a[href] {
+	min-height: 36px;
+}
+
+/* Focus outline visible everywhere */
+:focus-visible {
+	outline: 2px solid rgba(139, 92, 246, 0.8);
+	outline-offset: 2px;
+	border-radius: 6px;
+}
+
+/* Code / monospace readability */
+code, pre, .font-mono {
+	font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+	font-size: 0.875em;
+}
+
+/* Smooth scroll for navigation */
+html {
+	scroll-behavior: smooth;
+}

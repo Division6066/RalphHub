@@ -17,12 +17,15 @@
 	let isDesktop = false;
 
 	const features = [
-		{ icon: '☀️', title: 'Today Board', desc: 'ADHD-friendly daily focus — pick 3 tasks and ship them.', href: '/today', color: 'from-amber-500/20 to-orange-500/10', border: 'border-amber-400/20' },
-		{ icon: '♾️', title: 'Kaizen OS', desc: 'Continuous improvement across all life domains.', href: '/kaizen', color: 'from-violet-500/20 to-purple-500/10', border: 'border-violet-400/20' },
-		{ icon: '🧠', title: 'Memory Spine', desc: 'Capture and search everything you want to remember.', href: '/memory', color: 'from-cyan-500/20 to-blue-500/10', border: 'border-cyan-400/20' },
-		{ icon: '🛠️', title: '35+ AI Tools', desc: 'One-click deploy of Perplexica, Aider, OpenHands, and more.', href: '/tools', color: 'from-emerald-500/20 to-teal-500/10', border: 'border-emerald-400/20' },
-		{ icon: '🔑', title: '50+ API Keys', desc: 'Universal key manager — all providers, zero friction.', href: '/settings', color: 'from-rose-500/20 to-pink-500/10', border: 'border-rose-400/20' },
-		{ icon: '🎙️', title: 'Voice Mode', desc: 'Say commands to control AmitOS hands-free.', href: '/voice', color: 'from-indigo-500/20 to-blue-500/10', border: 'border-indigo-400/20' },
+		{ icon: '☀️', title: 'Today Board', desc: 'ADHD-friendly daily focus — pick 3 tasks and ship them.', href: '/today', color: 'from-amber-500/20 to-orange-500/10', border: 'border-amber-400/20', badge: '' },
+		{ icon: '♾️', title: 'Kaizen OS', desc: 'Continuous improvement across all life domains.', href: '/kaizen', color: 'from-violet-500/20 to-purple-500/10', border: 'border-violet-400/20', badge: '' },
+		{ icon: '🧠', title: 'Memory Spine', desc: 'Capture and search everything you want to remember.', href: '/memory', color: 'from-cyan-500/20 to-blue-500/10', border: 'border-cyan-400/20', badge: '' },
+		{ icon: '🖥️', title: 'Vy Agent', desc: 'Desktop AI that watches your screen and executes with approval.', href: '/vy', color: 'from-violet-600/20 to-indigo-500/10', border: 'border-violet-500/30', badge: 'NEW' },
+		{ icon: '🐼', title: 'Panda Phone', desc: 'Use your phone to approve actions, capture voice and check today tasks.', href: '/panda', color: 'from-cyan-600/20 to-teal-500/10', border: 'border-cyan-500/30', badge: 'NEW' },
+		{ icon: '🛠️', title: '35+ AI Tools', desc: 'One-click deploy of Perplexica, Aider, OpenHands, and more.', href: '/tools', color: 'from-emerald-500/20 to-teal-500/10', border: 'border-emerald-400/20', badge: '' },
+		{ icon: '🔑', title: '50+ API Keys', desc: 'Universal key manager — all providers, zero friction.', href: '/settings', color: 'from-rose-500/20 to-pink-500/10', border: 'border-rose-400/20', badge: '' },
+		{ icon: '🎙️', title: 'Voice Mode', desc: 'Say commands to control AmitOS hands-free.', href: '/voice', color: 'from-indigo-500/20 to-blue-500/10', border: 'border-indigo-400/20', badge: '' },
+		{ icon: '⚡', title: 'Workflows', desc: 'Chain AI tools into overnight research and coding loops.', href: '/workflows', color: 'from-amber-600/20 to-yellow-500/10', border: 'border-amber-400/20', badge: '' },
 	];
 
 	onMount(async () => {
@@ -106,6 +109,9 @@
 				href={f.href}
 				class={`group relative overflow-hidden rounded-2xl border ${f.border} bg-gradient-to-br ${f.color} p-6 transition hover:scale-[1.02] hover:shadow-lg`}
 			>
+				{#if f.badge}
+					<span class="absolute right-3 top-3 rounded-full bg-violet-500/30 border border-violet-400/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-200">{f.badge}</span>
+				{/if}
 				<div class="mb-3 text-3xl">{f.icon}</div>
 				<h3 class="text-base font-bold text-white">{f.title}</h3>
 				<p class="mt-2 text-sm leading-6 text-slate-300">{f.desc}</p>
@@ -121,6 +127,8 @@
 			<a href="/today" class="rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-medium text-amber-200 transition hover:bg-amber-400/20">☀️ Open Today Board</a>
 			<a href="/kaizen" class="rounded-xl border border-violet-400/25 bg-violet-400/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-400/20">+ New Kaizen Task</a>
 			<a href="/memory" class="rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/20">🧠 Add Memory</a>
+			<a href="/vy" class="rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20">🖥️ Start Vy Agent</a>
+			<a href="/panda" class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20">🐼 Panda Phone</a>
 			<a href="/voice" class="rounded-xl border border-indigo-400/25 bg-indigo-400/10 px-4 py-2 text-sm font-medium text-indigo-200 transition hover:bg-indigo-400/20">🎙️ Voice Command</a>
 			<a href="/settings" class="rounded-xl border border-rose-400/25 bg-rose-400/10 px-4 py-2 text-sm font-medium text-rose-200 transition hover:bg-rose-400/20">🔑 Add API Key</a>
 			<a href="/workflows" class="rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-200 transition hover:bg-emerald-400/20">⚡ New Workflow</a>

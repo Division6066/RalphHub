@@ -69,11 +69,24 @@
 				{/each}
 			</nav>
 
-			<div class="mt-4 rounded-xl border border-violet-500/20 bg-violet-500/8 p-3">
-				<p class="text-[10px] uppercase tracking-[0.25em] text-violet-300/80 font-semibold">AmitOS v1.0</p>
-				<p class="mt-1.5 text-xs leading-5 text-slate-400">
-					Full Kaizen OS + Memory + Voice + 50+ API providers.
-				</p>
+			<div class="mt-4 space-y-2">
+				<a href="/vy" class="flex items-center gap-2.5 rounded-xl border border-violet-500/20 bg-violet-500/8 px-3 py-2.5 hover:bg-violet-500/15 transition group">
+					<span class="text-base">🖥️</span>
+					<div class="min-w-0">
+						<p class="text-xs font-semibold text-violet-200">Vy Desktop Agent</p>
+						<p class="text-[10px] text-slate-500">AI takeover with approval</p>
+					</div>
+				</a>
+				<a href="/panda" class="flex items-center gap-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/8 px-3 py-2.5 hover:bg-cyan-500/15 transition">
+					<span class="text-base">🐼</span>
+					<div class="min-w-0">
+						<p class="text-xs font-semibold text-cyan-200">Panda Phone Control</p>
+						<p class="text-[10px] text-slate-500">Remote approvals + voice</p>
+					</div>
+				</a>
+				<div class="rounded-xl border border-white/8 bg-white/3 px-3 py-2">
+					<p class="text-[10px] text-slate-500 text-center">AmitOS v1.0 · MIT</p>
+				</div>
 			</div>
 		</aside>
 
