@@ -32,7 +32,9 @@
 		'Firecrawl researches web sources',
 		'Perplexica searches and filters',
 		'llm-council votes on best approach',
+		'Superpowers: brainstorm → plan → execute → review (dispatching-parallel-agents)',
 		'get-shit-done executes via selected model',
+		'Diffusionstudio Agent edits demo video in background (Vy/Panda control)',
 		'Fal.ai generates output assets',
 		'vibe-kanban updates board',
 		'claudia consolidates memory → Kaizen tasks'

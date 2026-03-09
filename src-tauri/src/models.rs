@@ -145,6 +145,80 @@ pub struct ToolManifest {
     pub open_in_code: bool,
     pub needs_sandbox: bool,
     pub required_keys: Vec<String>,
+    pub category: String,
+    pub parallel_capable: bool,
+    pub install_method: String,
+    pub tags: Vec<String>,
+}
+
+// ─── Process Manager Models ───────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolProcessStatus {
+    pub tool_id: String,
+    pub name: String,
+    pub status: String,
+    pub pid: Option<u32>,
+    pub started_at: Option<String>,
+    pub log_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LaunchBackgroundRequest {
+    pub tool_id: String,
+    pub workspace_path: String,
+    pub env_entries: Vec<EnvEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParallelToolConfig {
+    pub tool_id: String,
+    pub workspace_path: String,
+    pub env_entries: Vec<EnvEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParallelWorkflowRequest {
+    pub workflow_name: String,
+    pub tool_configs: Vec<ParallelToolConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParallelWorkflowResult {
+    pub workflow_id: String,
+    pub workflow_name: String,
+    pub statuses: Vec<ToolProcessStatus>,
+    pub memory_spine_id: String,
+    pub kaizen_task_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolLogsResult {
+    pub tool_id: String,
+    pub log_path: String,
+    pub lines: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceCommandRequest {
+    pub transcript: String,
+    pub confidence: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceCommandResult {
+    pub action: String,
+    pub tool_id: Option<String>,
+    pub message: String,
+    pub success: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

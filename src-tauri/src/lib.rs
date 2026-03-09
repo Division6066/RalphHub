@@ -1,6 +1,7 @@
 mod commands;
 mod models;
 mod orchestrator;
+mod process_manager;
 mod provider_registry;
 mod state;
 mod tool_registry;
@@ -66,6 +67,16 @@ pub fn run() {
       orchestrator::list_managed_projects,
       workflow::create_workflow_run,
       workflow::list_workflow_runs,
+      // Background process / parallel execution
+      commands::launch_tool_background,
+      commands::get_tool_process_status,
+      commands::stop_tool_process,
+      commands::get_tool_logs,
+      commands::list_running_tools,
+      commands::run_parallel_workflow,
+      commands::list_parallel_workflows,
+      // Voice command handler
+      commands::handle_voice_command,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

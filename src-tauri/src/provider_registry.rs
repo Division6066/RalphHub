@@ -320,17 +320,14 @@ pub fn list_memory_entries(conn: &Connection, limit: i64) -> Result<Vec<MemorySp
 // ─── Seed Pre-populated Providers ─────────────────────────────────────────────
 
 pub fn seed_default_providers(conn: &Connection) -> Result<()> {
-    let count: i64 = conn.query_row("SELECT COUNT(*) FROM providers", [], |r| r.get(0))?;
-    if count > 0 {
-        return Ok(());
-    }
-
     let providers = default_providers();
+    let now = Utc::now().to_rfc3339();
+
     for p in &providers {
-        let id = format!("builtin-{}", p.name.to_lowercase().replace(' ', "-").replace('/', "-").replace('.', "-"));
-        let now = Utc::now().to_rfc3339();
+        let id = format!("builtin-{}", p.name.to_lowercase().replace(' ', "-").replace('/', "-").replace('.', "-").replace('(', "").replace(')', ""));
         let models_json = serde_json::to_string(&p.models)?;
 
+        // INSERT OR IGNORE so existing rows (with user keys) are not overwritten
         conn.execute(
             "INSERT OR IGNORE INTO providers (id, name, category, base_url, auth_type, api_key_env, models, enabled, is_local, description, docs_url, logo_emoji, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
@@ -428,5 +425,89 @@ fn default_providers() -> Vec<ProviderSeed> {
         ProviderSeed { name: "Supabase", category: "database", base_url: "https://YOUR_PROJECT.supabase.co/rest/v1", auth_type: "apikey", api_key_env: "SUPABASE_ANON_KEY", models: vec!["postgres", "storage", "auth", "realtime"], is_local: false, enabled: false, description: "Open-source Firebase alternative with Postgres", docs_url: "https://supabase.com/docs", logo_emoji: "🟩" },
         ProviderSeed { name: "Pinecone", category: "database", base_url: "https://api.pinecone.io", auth_type: "api-key-header", api_key_env: "PINECONE_API_KEY", models: vec!["upsert", "query", "fetch", "delete"], is_local: false, enabled: false, description: "Vector database for AI embeddings", docs_url: "https://docs.pinecone.io", logo_emoji: "🌲" },
         ProviderSeed { name: "Weaviate", category: "database", base_url: "http://localhost:8080/v1", auth_type: "none", api_key_env: "WEAVIATE_URL", models: vec!["batch", "graphql", "objects"], is_local: true, enabled: false, description: "Open-source vector search engine", docs_url: "https://weaviate.io/developers/weaviate", logo_emoji: "⚡" },
+        // ── New: Superpowers Agent Provider ──────────────────────────────────
+        ProviderSeed {
+            name: "Superpowers Agent",
+            category: "automation",
+            base_url: "http://localhost:3333/api",
+            auth_type: "bearer",
+            api_key_env: "SUPERPOWERS_API_KEY",
+            models: vec!["parallel-agents", "tdd-workflow", "brainstorm-plan-execute", "review"],
+            is_local: true,
+            enabled: false,
+            description: "Agentic skills framework for coding agents. Composable skills, mandatory TDD, dispatching-parallel-agents, brainstorm→plan→execute→review cycles.",
+            docs_url: "https://github.com/obra/superpowers",
+            logo_emoji: "⚡",
+        },
+        // ── New: Diffusionstudio Agent Provider ────────────────────────────
+        ProviderSeed {
+            name: "Diffusionstudio Agent",
+            category: "video",
+            base_url: "http://localhost:8000/api",
+            auth_type: "bearer",
+            api_key_env: "DIFFUSION_AGENT_KEY",
+            models: vec!["video-composition", "semantic-search", "background-edit", "vy-panda-control"],
+            is_local: true,
+            enabled: false,
+            description: "Agentic video editing framework. AI-driven composition, semantic doc search, Vy/Panda computer control integration, background video processing.",
+            docs_url: "https://github.com/diffusionstudio/agent",
+            logo_emoji: "🎬",
+        },
+        // ── New: Vy/Panda Computer Control ─────────────────────────────────
+        ProviderSeed {
+            name: "Vy/Panda Computer Control",
+            category: "automation",
+            base_url: "http://localhost:7777/api",
+            auth_type: "bearer",
+            api_key_env: "VY_PANDA_KEY",
+            models: vec!["screen-control", "mouse-keyboard", "vision-agent", "background-automation"],
+            is_local: true,
+            enabled: false,
+            description: "Computer control agent for background automation. Lets Diffusionstudio Agent edit videos in background while user watches tutorials.",
+            docs_url: "https://github.com/vy-panda/computer-control",
+            logo_emoji: "🐼",
+        },
+        // ── New: Mobile Voice Assistant ────────────────────────────────────
+        ProviderSeed {
+            name: "Mobile Voice Assistant",
+            category: "voice",
+            base_url: "http://localhost:9999/api",
+            auth_type: "bearer",
+            api_key_env: "MOBILE_VOICE_KEY",
+            models: vec!["speech-to-intent", "voice-command", "text-to-speech", "wake-word"],
+            is_local: false,
+            enabled: false,
+            description: "Mobile voice/chat assistant integration. Start video edit or superpowers skill via phone voice command.",
+            docs_url: "https://docs.ralphhub.ai/mobile-voice",
+            logo_emoji: "📱",
+        },
+        // ── New: MCP Superpowers ────────────────────────────────────────────
+        ProviderSeed {
+            name: "MCP Superpowers Skills",
+            category: "mcp",
+            base_url: "npx://superpowers-mcp",
+            auth_type: "none",
+            api_key_env: "ANTHROPIC_API_KEY",
+            models: vec!["skill-dispatch", "tdd-runner", "parallel-agent-coordinator"],
+            is_local: true,
+            enabled: false,
+            description: "MCP server for Superpowers agentic skills. Enables Claude Code/Cursor/Codex plugin integration.",
+            docs_url: "https://github.com/obra/superpowers",
+            logo_emoji: "🧩",
+        },
+        // ── New: MCP Diffusionstudio ────────────────────────────────────────
+        ProviderSeed {
+            name: "MCP Diffusionstudio",
+            category: "mcp",
+            base_url: "npx://diffusionstudio-mcp",
+            auth_type: "none",
+            api_key_env: "OPENAI_API_KEY",
+            models: vec!["video-compose", "scene-search", "render-background"],
+            is_local: true,
+            enabled: false,
+            description: "MCP server for Diffusionstudio video agent. Semantic doc search and tool integration.",
+            docs_url: "https://github.com/diffusionstudio/agent",
+            logo_emoji: "🎬",
+        },
     ]
 }
