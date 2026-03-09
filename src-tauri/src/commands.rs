@@ -474,11 +474,19 @@ pub fn run_parallel_workflow(
 
     let kaizen_task = create_kaizen_task(&conn, &crate::models::CreateKaizenTaskRequest {
         title: format!("Parallel workflow: {}", request.workflow_name),
-        description: format!("Tools: {} | Status: {} launched, {} errors | {}", tool_names.join(", "), statuses.iter().filter(|s| s.status == "running").count(), errors.len(), summary),
-        priority: "high".to_string(),
-        source: "parallel-executor".to_string(),
-        provider_id: "parallel-executor".to_string(),
-        usage_log_id: usage_log.id.clone(),
+        description: Some(format!("Tools: {} | Status: {} launched, {} errors | {}", tool_names.join(", "), statuses.iter().filter(|s| s.status == "running").count(), errors.len(), summary)),
+        priority: Some(1),
+        source: Some("parallel-executor".to_string()),
+        provider_id: Some("parallel-executor".to_string()),
+        usage_log_id: Some(usage_log.id.clone()),
+        domain: Some("general".to_string()),
+        is_today: None,
+        is_minimum_version: None,
+        parent_id: None,
+        energy: None,
+        estimated_minutes: None,
+        tags: None,
+        due_date: None,
     }).map_err(|e| e.to_string())?;
 
     let now = chrono::Utc::now().to_rfc3339();

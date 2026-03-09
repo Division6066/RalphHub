@@ -1,5 +1,6 @@
 mod commands;
 mod computer_agent;
+mod kaizen;
 mod models;
 mod orchestrator;
 mod process_manager;
@@ -104,6 +105,14 @@ pub fn run() {
       voice_assistant::create_push_notification,
       voice_assistant::list_push_notifications,
       voice_assistant::mark_notification_read,
+      // ── Rich Kaizen Commands (for Today Board and full task management) ──
+      kaizen::list_kaizen_tasks,
+      kaizen::create_kaizen_task,
+      kaizen::update_kaizen_task,
+      kaizen::delete_kaizen_task,
+      kaizen::set_today_tasks,
+      kaizen::list_kaizen_domains,
+      kaizen::decompose_task,
       // ── New Tools: Background Process / Parallel Execution ──
       commands::launch_tool_background,
       commands::get_tool_process_status,

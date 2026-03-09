@@ -234,13 +234,27 @@ pub fn get_memory_spine_stats(conn: &Connection) -> Result<MemorySpineStats> {
 pub fn create_kaizen_task(conn: &Connection, req: &CreateKaizenTaskRequest) -> Result<KaizenTask> {
     let id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
+    let tags_json = serde_json::to_string(&req.tags.clone().unwrap_or_default()).unwrap_or_default();
+    let priority = req.priority.unwrap_or(3);
+    let energy = req.energy.clone().unwrap_or_else(|| "medium".to_string());
 
     conn.execute(
-        "INSERT INTO kaizen_tasks (id, title, description, status, priority, source, provider_id, usage_log_id, created_at, updated_at)
-         VALUES (?1, ?2, ?3, 'todo', ?4, ?5, ?6, ?7, ?8, ?9)",
+        "INSERT INTO kaizen_tasks (id, title, description, domain, status, is_today, is_minimum_version,
+         priority, parent_id, subtasks, energy, estimated_minutes, tags, due_date,
+         source, provider_id, usage_log_id, created_at, updated_at)
+         VALUES (?1,?2,?3,?4,'todo',?5,?6,?7,?8,'[]',?9,?10,?11,?12,?13,?14,?15,?16,?16)",
         params![
-            id, req.title, req.description, req.priority,
-            req.source, req.provider_id, req.usage_log_id, now, now,
+            id, req.title, req.description,
+            req.domain.as_deref().unwrap_or("general"),
+            if req.is_today.unwrap_or(false) { 1 } else { 0 },
+            if req.is_minimum_version.unwrap_or(false) { 1 } else { 0 },
+            priority, req.parent_id,
+            energy, req.estimated_minutes,
+            tags_json, req.due_date,
+            req.source.as_deref().unwrap_or(""),
+            req.provider_id.as_deref().unwrap_or(""),
+            req.usage_log_id.as_deref().unwrap_or(""),
+            now,
         ],
     )?;
 
@@ -249,7 +263,10 @@ pub fn create_kaizen_task(conn: &Connection, req: &CreateKaizenTaskRequest) -> R
 
 fn get_kaizen_task(conn: &Connection, id: &str) -> Result<KaizenTask> {
     let task = conn.query_row(
-        "SELECT id, title, description, status, priority, source, provider_id, usage_log_id, created_at, updated_at FROM kaizen_tasks WHERE id = ?1",
+        "SELECT id, title, description, domain, status, is_today, is_minimum_version,
+                priority, parent_id, subtasks, energy, estimated_minutes, tags, due_date,
+                source, provider_id, usage_log_id, created_at, updated_at
+         FROM kaizen_tasks WHERE id = ?1",
         params![id],
         row_to_task,
     )?;
@@ -259,13 +276,19 @@ fn get_kaizen_task(conn: &Connection, id: &str) -> Result<KaizenTask> {
 pub fn list_kaizen_tasks(conn: &Connection, status: Option<&str>) -> Result<Vec<KaizenTask>> {
     if let Some(s) = status {
         let mut stmt = conn.prepare(
-            "SELECT id, title, description, status, priority, source, provider_id, usage_log_id, created_at, updated_at FROM kaizen_tasks WHERE status = ?1 ORDER BY created_at DESC",
+            "SELECT id, title, description, domain, status, is_today, is_minimum_version,
+                    priority, parent_id, subtasks, energy, estimated_minutes, tags, due_date,
+                    source, provider_id, usage_log_id, created_at, updated_at
+             FROM kaizen_tasks WHERE status = ?1 ORDER BY is_today DESC, created_at DESC",
         )?;
         let rows = stmt.query_map(params![s], row_to_task)?;
         return Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?);
     }
     let mut stmt = conn.prepare(
-        "SELECT id, title, description, status, priority, source, provider_id, usage_log_id, created_at, updated_at FROM kaizen_tasks ORDER BY created_at DESC",
+        "SELECT id, title, description, domain, status, is_today, is_minimum_version,
+                priority, parent_id, subtasks, energy, estimated_minutes, tags, due_date,
+                source, provider_id, usage_log_id, created_at, updated_at
+         FROM kaizen_tasks ORDER BY is_today DESC, created_at DESC",
     )?;
     let rows = stmt.query_map([], row_to_task)?;
     Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
@@ -281,17 +304,28 @@ pub fn update_kaizen_task_status(conn: &Connection, id: &str, status: &str) -> R
 }
 
 fn row_to_task(row: &rusqlite::Row<'_>) -> rusqlite::Result<KaizenTask> {
+    let subtasks_json: String = row.get(9)?;
+    let tags_json: String = row.get(12)?;
     Ok(KaizenTask {
         id: row.get(0)?,
         title: row.get(1)?,
         description: row.get(2)?,
-        status: row.get(3)?,
-        priority: row.get(4)?,
-        source: row.get(5)?,
-        provider_id: row.get(6)?,
-        usage_log_id: row.get(7)?,
-        created_at: row.get(8)?,
-        updated_at: row.get(9)?,
+        domain: row.get::<_, Option<String>>(3)?.unwrap_or_else(|| "general".to_string()),
+        status: row.get(4)?,
+        is_today: row.get::<_, i32>(5)? != 0,
+        is_minimum_version: row.get::<_, i32>(6)? != 0,
+        priority: row.get(7)?,
+        parent_id: row.get(8)?,
+        subtasks: serde_json::from_str(&subtasks_json).unwrap_or_default(),
+        energy: row.get::<_, Option<String>>(10)?.unwrap_or_else(|| "medium".to_string()),
+        estimated_minutes: row.get(11)?,
+        tags: serde_json::from_str(&tags_json).unwrap_or_default(),
+        due_date: row.get(13)?,
+        source: row.get(14)?,
+        provider_id: row.get(15)?,
+        usage_log_id: row.get(16)?,
+        created_at: row.get(17)?,
+        updated_at: row.get(18)?,
     })
 }
 

@@ -204,15 +204,41 @@ fn initialize_database(path: &Path) -> Result<()> {
         CREATE TABLE IF NOT EXISTS kaizen_tasks (
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
-            description TEXT NOT NULL DEFAULT '',
+            description TEXT DEFAULT NULL,
+            domain TEXT NOT NULL DEFAULT 'general',
             status TEXT NOT NULL DEFAULT 'todo',
-            priority TEXT NOT NULL DEFAULT 'normal',
+            is_today INTEGER NOT NULL DEFAULT 0,
+            is_minimum_version INTEGER NOT NULL DEFAULT 0,
+            priority INTEGER NOT NULL DEFAULT 3,
+            parent_id TEXT DEFAULT NULL,
+            subtasks TEXT NOT NULL DEFAULT '[]',
+            energy TEXT NOT NULL DEFAULT 'medium',
+            estimated_minutes INTEGER DEFAULT NULL,
+            tags TEXT NOT NULL DEFAULT '[]',
+            due_date TEXT DEFAULT NULL,
             source TEXT NOT NULL DEFAULT '',
             provider_id TEXT NOT NULL DEFAULT '',
             usage_log_id TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS kaizen_domains (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            color TEXT NOT NULL DEFAULT '#6366f1',
+            icon TEXT NOT NULL DEFAULT '📁',
+            description TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+
+        INSERT OR IGNORE INTO kaizen_domains (id, name, color, icon, description, created_at)
+        VALUES
+            ('general', 'General', '#6366f1', '📋', 'General tasks', datetime('now')),
+            ('coding', 'Coding', '#06b6d4', '💻', 'Development tasks', datetime('now')),
+            ('research', 'Research', '#8b5cf6', '🔬', 'Research and learning', datetime('now')),
+            ('writing', 'Writing', '#10b981', '✍️', 'Writing and documentation', datetime('now')),
+            ('health', 'Health', '#ef4444', '❤️', 'Health and wellness', datetime('now'));
 
         CREATE TABLE IF NOT EXISTS memory_spine (
             id TEXT PRIMARY KEY,
