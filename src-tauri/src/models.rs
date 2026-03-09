@@ -131,6 +131,150 @@ pub struct MemorySpineStats {
     pub active_tasks: Vec<KaizenTask>,
 }
 
+// ─── Computer Control ─────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComputerControlSettings {
+    pub enabled: bool,
+    pub mode: String, // "supervised" | "autonomous"
+    pub allow_background_tasks: bool,
+    pub require_confirmation: bool,
+    pub kill_switch_active: bool,
+    pub android_panda_enabled: bool,
+    pub desktop_agent_provider: String, // provider_id for LLM vision
+    pub desktop_agent_model: String,
+    pub max_concurrent_tasks: i64,
+    pub screenshot_interval_ms: i64,
+    pub updated_at: String,
+}
+
+impl Default for ComputerControlSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            mode: "supervised".to_string(),
+            allow_background_tasks: false,
+            require_confirmation: true,
+            kill_switch_active: false,
+            android_panda_enabled: false,
+            desktop_agent_provider: String::new(),
+            desktop_agent_model: String::new(),
+            max_concurrent_tasks: 3,
+            screenshot_interval_ms: 2000,
+            updated_at: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum ActionKind {
+    Screenshot,
+    MouseMove,
+    MouseClick,
+    MouseDoubleClick,
+    MouseRightClick,
+    MouseScroll,
+    TypeText,
+    KeyPress,
+    KeyCombo,
+    OpenApp,
+    CloseApp,
+    Shell,
+    Wait,
+    AnalyzeScreen,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComputerAction {
+    pub kind: ActionKind,
+    pub x: Option<i32>,
+    pub y: Option<i32>,
+    pub text: Option<String>,
+    pub keys: Option<Vec<String>>,
+    pub app_name: Option<String>,
+    pub command: Option<String>,
+    pub duration_ms: Option<u64>,
+    pub scroll_delta: Option<i32>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComputerActionResult {
+    pub ok: bool,
+    pub message: String,
+    pub screenshot_b64: Option<String>,
+    pub screen_analysis: Option<String>,
+    pub timestamp: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum AgentTaskStatus {
+    Queued,
+    Running,
+    Paused,
+    Completed,
+    Failed,
+    Killed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentTask {
+    pub id: String,
+    pub title: String,
+    pub description: String,
+    pub goal: String,
+    pub status: AgentTaskStatus,
+    pub mode: String,
+    pub progress_pct: f32,
+    pub steps_completed: i64,
+    pub steps_total: i64,
+    pub current_step: String,
+    pub log: Vec<String>,
+    pub screenshot_b64: Option<String>,
+    pub kaizen_task_id: Option<String>,
+    pub memory_entries: Vec<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    pub completed_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateAgentTaskRequest {
+    pub title: String,
+    pub description: String,
+    pub goal: String,
+    pub mode: String,
+    pub provider_id: Option<String>,
+    pub model: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PermissionRequest {
+    pub task_id: String,
+    pub action: ComputerAction,
+    pub reason: String,
+    pub risk_level: String, // "low" | "medium" | "high"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParallelWorkflow {
+    pub id: String,
+    pub name: String,
+    pub foreground_task: String,
+    pub background_tasks: Vec<String>,
+    pub status: String,
+    pub created_at: String,
+}
+
 // ─── Tool Manifest ───────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
