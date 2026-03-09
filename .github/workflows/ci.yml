@@ -1,0 +1,42 @@
+name: AmitOS CI
+
+on:
+  push:
+    branches: [main, master, 'cursor/**']
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  frontend-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install deps
+        run: bun install
+      - name: Run tests
+        run: bun run test
+      - name: Build frontend
+        run: bun run build
+      - name: Type check
+        run: bun run check
+        continue-on-error: true
+
+  rust-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev \
+            librsvg2-dev patchelf libssl-dev
+      - name: Cargo check
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+      - name: Cargo clippy
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+        continue-on-error: true

@@ -922,9 +922,9 @@ fn get_adb_prop(serial: &str, prop: &str) -> Option<String> {
 
 fn check_panda_installed(serial: &str) -> bool {
     Command::new("adb")
-        .args(["-s", serial, "shell", "pm", "list", "packages", "com.ralphhub.panda"])
+        .args(["-s", serial, "shell", "pm", "list", "packages", "com.amitos.panda"])
         .output()
-        .map(|out| String::from_utf8_lossy(&out.stdout).contains("com.ralphhub.panda"))
+        .map(|out| String::from_utf8_lossy(&out.stdout).contains("com.amitos.panda"))
         .unwrap_or(false)
 }
 
@@ -952,12 +952,12 @@ fi
 sudo apt-get install -y -qq python3 python3-pip python3-venv git curl
 
 # Clone RalphHub agent
-if [ ! -d "$HOME/ralphhub-agent" ]; then
-  git clone https://github.com/suitedaces/computer-agent.git "$HOME/ralphhub-agent" || \
-  mkdir -p "$HOME/ralphhub-agent"
+if [ ! -d "$HOME/amitos-agent" ]; then
+  git clone https://github.com/suitedaces/computer-agent.git "$HOME/amitos-agent" || \
+  mkdir -p "$HOME/amitos-agent"
 fi
 
-cd "$HOME/ralphhub-agent"
+cd "$HOME/amitos-agent"
 
 # Install Python dependencies for Vy/Agent-S
 python3 -m venv venv
@@ -965,7 +965,7 @@ source venv/bin/activate
 pip install -q pyautogui pillow anthropic openai requests websockets
 
 # Create the node daemon
-cat > "$HOME/ralphhub-node.py" << 'PYEOF'
+cat > "$HOME/amitos-node.py" << 'PYEOF'
 import asyncio, json, os, time, websockets, subprocess
 from datetime import datetime
 
@@ -1001,7 +1001,7 @@ asyncio.run(main())
 PYEOF
 
 # Create systemd service
-sudo tee /etc/systemd/system/ralphhub-node.service > /dev/null << EOF
+sudo tee /etc/systemd/system/amitos-node.service > /dev/null << EOF
 [Unit]
 Description=RalphHub Remote Agent Node
 After=network.target
@@ -1009,8 +1009,8 @@ After=network.target
 [Service]
 Type=simple
 User=$USER
-WorkingDirectory=$HOME/ralphhub-agent
-ExecStart=$HOME/ralphhub-agent/venv/bin/python $HOME/ralphhub-node.py
+WorkingDirectory=$HOME/amitos-agent
+ExecStart=$HOME/amitos-agent/venv/bin/python $HOME/amitos-node.py
 Restart=always
 RestartSec=5
 
@@ -1019,8 +1019,8 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
-sudo systemctl enable ralphhub-node
-sudo systemctl start ralphhub-node
+sudo systemctl enable amitos-node
+sudo systemctl start amitos-node
 
 echo "=== RalphHub node deployed successfully ==="
 echo "WebSocket listening on ws://$(hostname -I | awk '{{print $1}}'):7788"
