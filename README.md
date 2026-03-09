@@ -28,11 +28,17 @@ curl -fsSL https://raw.githubusercontent.com/your-org/amitos/main/scripts/build-
 
 ## 🎙️ Voice Demo (30 seconds)
 
-1. Open AmitOS → Voice + Chat tab
-2. Say: **"Open my email and summarize unread messages"**
-3. Vy (desktop agent) reads your screen, Panda (phone) shows approval prompt
-4. Tap **Allow** on your phone → task executes in background
-5. Memory Spine logs the action, Kaizen Task auto-created for review
+1. Open AmitOS → **Parallel Run** tab (or Voice + Chat)
+2. Say: **"Run parallel"** — Superpowers starts coding your feature + Diffusionstudio edits your demo video _simultaneously_
+3. Vy (desktop agent) watches your screen; Panda (phone) shows approval prompt
+4. Tap **Allow** on your phone → both agents run in background
+5. Memory Spine logs every action, Kaizen Board auto-creates tasks for review
+
+**Or try individual voice commands:**
+- `"launch superpowers"` — starts agentic coding framework
+- `"start video edit"` — launches background video agent
+- `"stop all"` — pauses everything immediately
+- `"status"` — reads what's running
 
 ---
 
@@ -40,17 +46,17 @@ curl -fsSL https://raw.githubusercontent.com/your-org/amitos/main/scripts/build-
 
 | Feature | Description |
 |---------|-------------|
-| 🖥️ **Vy Desktop Agent** | AI agent with vision + mouse/keyboard. Takes over desktop with per-action approval |
-| 🐼 **Panda Phone Control** | Android companion for remote approvals, voice capture, today-board |
-| 🎙️ **Voice + Chat** | Web Speech API, intent parser, real-time chat UI |
-| ♾️ **Kaizen Tasks** | Auto-created from every agent action. Kanban board, priorities, domains |
-| 🧠 **Memory Spine** | Every action logged with cost tracking. Searchable, persistent |
+| 📅 **Today Board** | Focus dashboard — energy-tagged tasks (🌱/⚡/🔥), one-tap status, minimum-version flag |
+| 🖥️ **Vy Desktop Agent** | AI vision + mouse/keyboard takeover. Goal-driven with per-action approval |
+| 🐼 **Panda Phone Control** | Android companion for remote approvals, voice capture, today-board at your thumb |
+| ⚡ **Parallel Run** | Launch superpowers (coding) + diffusionstudio/agent (video) simultaneously |
+| 🎙️ **Voice + Chat** | Web Speech API, intent parser, real-time chat UI + push notifications |
+| ♾️ **Kaizen Tasks** | Rich domain/energy/today fields. Auto-created from every agent action |
+| 🧠 **Memory Spine** | Every action logged with cost tracking. Searchable, persistent, exportable |
 | ☁️ **VPS + RPi Deploy** | One-click SSH deploy to any server. Systemd daemon + WebSocket sync |
-| 🔌 **MCP Browser** | Playwright, Firecrawl, GitHub MCP — toggle on/off, get instant config |
+| 🔌 **MCP Browser** | Playwright, Firecrawl, GitHub MCP — toggle on/off, instant JSON config |
 | 📱 **Mobile Sync** | QR-code pairing for real-time sync with Android companion |
 | 🔑 **50+ API Providers** | Tauri Stronghold vault, zero plaintext. Auto-injected into every tool |
-| ⚡ **Parallel Execution** | Run 5 agent tasks simultaneously across desktop, phone, VPS, RPi |
-| 🚀 **Deploy Any Repo** | Clone, setup, inject keys, and launch any GitHub/HF repo with one click |
 | 🛠️ **Tool Registry** | superpowers, diffusionstudio/agent, Firecrawl, Apify — 35+ tools pre-wired |
 
 ---
