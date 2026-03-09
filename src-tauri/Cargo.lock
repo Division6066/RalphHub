@@ -3290,6 +3290,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-log",
  "tauri-plugin-stronghold",
+ "uuid",
 ]
 
 [[package]]

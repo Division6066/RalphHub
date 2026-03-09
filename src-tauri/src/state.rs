@@ -164,6 +164,60 @@ fn initialize_database(path: &Path) -> Result<()> {
             git_ref TEXT,
             created_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS providers (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            base_url TEXT NOT NULL,
+            auth_type TEXT NOT NULL DEFAULT 'bearer',
+            api_key_env TEXT NOT NULL,
+            models TEXT NOT NULL DEFAULT '[]',
+            enabled INTEGER NOT NULL DEFAULT 1,
+            is_local INTEGER NOT NULL DEFAULT 0,
+            description TEXT NOT NULL DEFAULT '',
+            docs_url TEXT NOT NULL DEFAULT '',
+            logo_emoji TEXT NOT NULL DEFAULT '🔌',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS api_usage_logs (
+            id TEXT PRIMARY KEY,
+            provider_id TEXT NOT NULL,
+            provider_name TEXT NOT NULL DEFAULT '',
+            model TEXT NOT NULL,
+            tokens_in INTEGER NOT NULL DEFAULT 0,
+            tokens_out INTEGER NOT NULL DEFAULT 0,
+            cost_usd REAL NOT NULL DEFAULT 0.0,
+            output_summary TEXT NOT NULL DEFAULT '',
+            tool_id TEXT NOT NULL DEFAULT '',
+            workflow_id TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS kaizen_tasks (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'todo',
+            priority TEXT NOT NULL DEFAULT 'normal',
+            source TEXT NOT NULL DEFAULT '',
+            provider_id TEXT NOT NULL DEFAULT '',
+            usage_log_id TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS memory_spine (
+            id TEXT PRIMARY KEY,
+            entry_type TEXT NOT NULL DEFAULT 'note',
+            content TEXT NOT NULL,
+            tags TEXT NOT NULL DEFAULT '[]',
+            provider_id TEXT NOT NULL DEFAULT '',
+            model TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        );
         ",
     )?;
 
