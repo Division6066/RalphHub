@@ -34,70 +34,16 @@
 
 	// ─── Features grid ─────────────────────────────────────────────────────────
 	const features = [
-		{
-			icon: '🖥️',
-			label: 'Vy Agent',
-			desc: 'Desktop AI takeover with vision + mouse/keyboard',
-			href: '/computer-control',
-			accent: 'violet',
-			badge: 'AI'
-		},
-		{
-			icon: '🐼',
-			label: 'Panda Phone',
-			desc: 'Remote approvals + voice capture from your phone',
-			href: '/panda',
-			accent: 'cyan',
-			badge: 'PHONE'
-		},
-		{
-			icon: '🎙️',
-			label: 'Voice + Chat',
-			desc: 'Web Speech API, intent parser, real-time chat UI',
-			href: '/voice',
-			accent: 'emerald',
-			badge: ''
-		},
-		{
-			icon: '♾️',
-			label: 'Kaizen Tasks',
-			desc: 'Auto-created tasks, Kanban board, Today view',
-			href: '/kaizen',
-			accent: 'amber',
-			badge: 'NEW'
-		},
-		{
-			icon: '🧠',
-			label: 'Memory Spine',
-			desc: 'Every action logged, searchable, cost-tracked',
-			href: '/memory',
-			accent: 'violet',
-			badge: ''
-		},
-		{
-			icon: '☁️',
-			label: 'VPS + RPi',
-			desc: 'One-click deploy to VPS or Raspberry Pi via SSH',
-			href: '/remote-nodes',
-			accent: 'cyan',
-			badge: ''
-		},
-		{
-			icon: '🔌',
-			label: 'MCP Browser',
-			desc: 'Playwright MCP, Capture MCP, Edge profile launch',
-			href: '/mcp',
-			accent: 'emerald',
-			badge: ''
-		},
-		{
-			icon: '📱',
-			label: 'Mobile Sync',
-			desc: 'APK companion app, QR install, real-time sync',
-			href: '/mobile',
-			accent: 'amber',
-			badge: ''
-		},
+		{ icon: '📅', label: 'Today Board',    desc: 'Focus on what matters — energy-tagged tasks, one-tap status', href: '/today',           accent: 'violet',  badge: 'NEW' },
+		{ icon: '🖥️', label: 'Vy Agent',       desc: 'Desktop AI takeover — vision, mouse/keyboard, goal-driven',  href: '/vy',              accent: 'violet',  badge: 'AI'  },
+		{ icon: '⚡', label: 'Parallel Run',    desc: 'Superpowers + Diffusionstudio running simultaneously',        href: '/parallel',         accent: 'amber',   badge: 'NEW' },
+		{ icon: '🐼', label: 'Panda Phone',    desc: 'Remote approvals + voice capture from your Android phone',    href: '/panda',            accent: 'cyan',    badge: 'PHONE' },
+		{ icon: '🎙️', label: 'Voice + Chat',   desc: 'Web Speech API, intent parser, real-time push chat',         href: '/voice',            accent: 'emerald', badge: ''    },
+		{ icon: '♾️', label: 'Kaizen Tasks',   desc: 'Auto-created tasks from every API call and agent action',     href: '/kaizen',           accent: 'amber',   badge: ''    },
+		{ icon: '🧠', label: 'Memory Spine',   desc: 'Every action logged with cost tracking — searchable forever', href: '/memory',           accent: 'violet',  badge: ''    },
+		{ icon: '☁️', label: 'VPS + RPi',      desc: 'One-click deploy to VPS or Raspberry Pi via SSH',             href: '/remote-nodes',     accent: 'cyan',    badge: ''    },
+		{ icon: '🔌', label: 'MCP Browser',    desc: 'Playwright MCP, Capture MCP, Edge profile launch + audit',    href: '/mcp',              accent: 'emerald', badge: ''    },
+		{ icon: '📱', label: 'Mobile Sync',    desc: 'APK companion app, QR install, real-time WebSocket sync',     href: '/mobile',           accent: 'amber',   badge: ''    },
 	];
 
 	const milestones = [
