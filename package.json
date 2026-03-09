@@ -12,7 +12,12 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"tauri": "tauri",
 		"tauri:dev": "bun run tauri dev",
-		"tauri:build": "bun run tauri build"
+		"tauri:build": "bun run tauri build",
+		"mobile:sync": "npx cap sync android",
+		"mobile:open": "npx cap open android",
+		"mobile:build": "bash scripts/build-apk.sh",
+		"mobile:keystore": "bash scripts/generate-keystore.sh",
+		"e2e": "bash scripts/e2e-test.sh"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.10",
@@ -20,6 +25,7 @@
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"@tailwindcss/vite": "^4.2.1",
 		"@tauri-apps/cli": "^2.10.1",
+		"@types/qrcode": "^1.5.6",
 		"autoprefixer": "^10.4.27",
 		"postcss": "^8.5.8",
 		"svelte": "^5.51.0",
@@ -29,7 +35,11 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
+		"@capacitor/android": "^8.2.0",
+		"@capacitor/cli": "^8.2.0",
+		"@capacitor/core": "^8.2.0",
 		"@tauri-apps/api": "^2.10.1",
-		"@tauri-apps/plugin-stronghold": "^2.3.1"
+		"@tauri-apps/plugin-stronghold": "^2.3.1",
+		"qrcode": "^1.5.4"
 	}
 }

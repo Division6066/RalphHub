@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- RalphHub Mobile — Dark navy color scheme matching desktop app -->
+<resources>
+    <color name="colorPrimary">#060816</color>
+    <color name="colorPrimaryDark">#04050f</color>
+    <color name="colorAccent">#22d3ee</color>
+    <color name="colorBackground">#060816</color>
+    <color name="colorSurface">#0f172a</color>
+    <color name="colorOnPrimary">#f1f5f9</color>
+    <color name="ic_launcher_background">#060816</color>
+</resources>
