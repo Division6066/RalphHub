@@ -11,6 +11,7 @@
 		{ href: '/deploy', label: 'Deploy' },
 		{ href: '/tools', label: 'Tools' },
 		{ href: '/workflows', label: 'Workflows' },
+		{ href: '/computer-control', label: '🖥️ Computer Control' },
 		{ href: '/settings', label: 'Providers & Settings' }
 	];
 

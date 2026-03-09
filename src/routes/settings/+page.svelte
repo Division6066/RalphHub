@@ -30,11 +30,20 @@
 		type CreateProviderRequest,
 		type ProviderCategory
 	} from '$lib/utils/provider-registry';
+	import {
+		loadCcSettings,
+		saveCcSettings,
+		activateKillSwitch,
+		deactivateKillSwitch,
+		ccSettingsStore,
+		ccKillSwitchStore,
+		ccRunningTasksStore
+	} from '$lib/utils/computer-control';
 
 	import ProviderCard from '$lib/components/ProviderCard.svelte';
 
 	// ─── Tab State ───────────────────────────────────────────────────────────────
-	let activeTab: 'providers' | 'legacy-keys' | 'memory' | 'tasks' = 'providers';
+	let activeTab: 'providers' | 'legacy-keys' | 'memory' | 'tasks' | 'computer-control' = 'providers';
 
 	// ─── Legacy Keys ─────────────────────────────────────────────────────────────
 	const labels: Record<KeyField, string> = {
@@ -146,6 +155,13 @@
 		} catch {
 			// Non-critical
 		}
+
+		// Load computer control settings
+		try {
+			await loadCcSettings();
+		} catch {
+			// Non-critical
+		}
 	});
 
 	async function handleSaveKeys() {
@@ -243,11 +259,12 @@
 	</div>
 
 	<!-- Tabs -->
-	<div class="flex gap-1 rounded-2xl border border-white/10 bg-slate-950/40 p-1 backdrop-blur">
+	<div class="flex gap-1 rounded-2xl border border-white/10 bg-slate-950/40 p-1 backdrop-blur overflow-x-auto">
 		{#each [
 			{ id: 'providers', label: '🔌 Providers' },
 			{ id: 'memory', label: '🧠 Memory Spine' },
 			{ id: 'tasks', label: '✅ Kaizen Tasks' },
+			{ id: 'computer-control', label: '🖥️ Computer Control' },
 			{ id: 'legacy-keys', label: '🔑 Legacy Keys' },
 		] as tab}
 			<button
@@ -630,6 +647,94 @@
 							</div>
 						{/each}
 					</div>
+				{/if}
+			</div>
+		</div>
+
+	<!-- ═══════════════════ COMPUTER CONTROL TAB ════════════════ -->
+	{:else if activeTab === 'computer-control'}
+		<div class="space-y-4">
+			<div class="rounded-3xl border border-violet-400/20 bg-violet-950/15 p-6 backdrop-blur">
+				<h2 class="text-lg font-semibold text-violet-200">Vy-Style Computer Control</h2>
+				<p class="mt-2 text-sm text-slate-400">
+					Full desktop + Android computer control. Enable, configure modes, and set safety options. Full UI available at <a href="/computer-control" class="text-cyan-400 hover:text-cyan-300 underline">Computer Control →</a>
+				</p>
+
+				{#if $ccSettingsStore}
+					<div class="mt-5 space-y-3">
+						<div class="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-900/50 p-4">
+							<div>
+								<p class="text-sm font-medium text-white">Enable Computer Control</p>
+								<p class="text-xs text-slate-500">Global toggle for all agent actions</p>
+							</div>
+							<button
+								type="button"
+								on:click={async () => {
+									if ($ccSettingsStore) {
+										$ccSettingsStore.enabled = !$ccSettingsStore.enabled;
+										await saveCcSettings($ccSettingsStore);
+									}
+								}}
+								aria-label="Toggle Computer Control"
+							class="relative h-6 w-11 rounded-full transition-colors {$ccSettingsStore.enabled ? 'bg-cyan-500' : 'bg-slate-700'}"
+							>
+								<span class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform {$ccSettingsStore.enabled ? 'translate-x-5' : ''}"></span>
+							</button>
+						</div>
+
+						<div class="rounded-2xl border border-white/10 bg-slate-900/50 p-4">
+							<p class="text-sm font-medium text-white mb-2">Mode</p>
+							<div class="flex gap-2">
+								{#each ['supervised', 'autonomous'] as m}
+									<button
+										type="button"
+										on:click={async () => {
+											if ($ccSettingsStore) {
+												$ccSettingsStore.mode = m as 'supervised' | 'autonomous';
+												await saveCcSettings($ccSettingsStore);
+											}
+										}}
+										class="flex-1 rounded-xl px-3 py-2 text-xs font-medium border transition-colors
+											{$ccSettingsStore.mode === m
+											? (m === 'supervised' ? 'bg-amber-400/20 text-amber-200 border-amber-400/30' : 'bg-violet-400/20 text-violet-200 border-violet-400/30')
+											: 'bg-slate-800 text-slate-500 border-transparent'}"
+									>
+										{m === 'supervised' ? '👁 Supervised' : '🤖 Autonomous'}
+									</button>
+								{/each}
+							</div>
+						</div>
+
+						{#if $ccKillSwitchStore}
+							<div class="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4">
+								<p class="text-sm font-bold text-rose-300">⛔ Kill Switch Active</p>
+								<button
+									type="button"
+									on:click={deactivateKillSwitch}
+									class="mt-2 rounded-full border border-green-400/30 bg-green-500/10 px-4 py-2 text-xs text-green-300"
+								>
+									Resume Operations
+								</button>
+							</div>
+						{:else}
+							<button
+								type="button"
+								on:click={activateKillSwitch}
+								class="w-full rounded-2xl border border-rose-400/30 bg-rose-500/10 p-3 text-sm font-bold text-rose-300 hover:bg-rose-500/20"
+							>
+								⛔ Activate Emergency Kill Switch
+							</button>
+						{/if}
+
+						<a
+							href="/computer-control"
+							class="block w-full rounded-2xl bg-gradient-to-r from-violet-500 to-cyan-500 p-3 text-center text-sm font-semibold text-white"
+						>
+							Open Computer Control Center →
+						</a>
+					</div>
+				{:else}
+					<p class="mt-4 text-sm text-slate-500">Loading settings…</p>
 				{/if}
 			</div>
 		</div>
